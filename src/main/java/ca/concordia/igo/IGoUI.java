@@ -24,6 +24,8 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -59,6 +61,7 @@ public class IGoUI extends Application {
         private Language currentLanguage = Language.EN;
         private Stage primaryStage;
         private BorderPane mainContainer;
+        private StackPane rootContainer;
 
         public static void main(String[] args) {
                 launch(args);
@@ -76,9 +79,12 @@ public class IGoUI extends Application {
                 mainContainer = new BorderPane();
                 mainContainer.setStyle("-fx-background-color: " + BACKGROUND_COLOR + ";");
 
+                rootContainer = new StackPane(mainContainer);
+                rootContainer.setStyle("-fx-background-color: " + BACKGROUND_COLOR + ";");
+
                 showLanguageSelection();
 
-                Scene scene = new Scene(mainContainer, 1024, 768);
+                Scene scene = new Scene(rootContainer, 1024, 768);
                 scene.getStylesheets().add(getStylesheet());
 
                 primaryStage.setScene(scene);
@@ -275,9 +281,9 @@ public class IGoUI extends Application {
         // ========================================================================
 
         private void showLanguageSelection() {
-                VBox content = new VBox(40);
+                VBox content = new VBox(28);
                 content.setAlignment(Pos.CENTER);
-                content.setPadding(new Insets(60));
+                content.setPadding(new Insets(36));
                 content.setStyle("-fx-background-color: linear-gradient(to bottom, " +
                                 SECONDARY_COLOR + ", " + PRIMARY_COLOR + ");");
 
@@ -345,18 +351,20 @@ public class IGoUI extends Application {
                 content.setPadding(new Insets(40));
 
                 // Menu Options
+                Node ticketIcon = createMenuImage("/images/ticket.png", 96, 64);
                 Button buyTicketBtn = createMenuButton(
                                 currentLanguage == Language.FR ? "Acheter un Billet" : "Buy Ticket",
                                 currentLanguage == Language.FR ? "Billets simples, aller-retour et laissez-passer"
                                                 : "Single, return and day pass tickets",
-                                "🎫");
+                                ticketIcon);
                 buyTicketBtn.setOnAction(e -> fadeTransition(layout, () -> showBuyTicketScreen()));
 
+                Node rechargeIcon = createMenuImage("/images/presto-card.png", 96, 64);
                 Button rechargeBtn = createMenuButton(
                                 currentLanguage == Language.FR ? "Recharger PRESTO" : "Recharge PRESTO",
                                 currentLanguage == Language.FR ? "Ajoutez des fonds à votre carte"
                                                 : "Add funds to your card",
-                                "🚇");
+                                rechargeIcon);
                 rechargeBtn.setOnAction(e -> fadeTransition(layout, () -> showRechargeScreen()));
 
                 Button checkBalanceBtn = createMenuButton(
@@ -580,19 +588,19 @@ public class IGoUI extends Application {
                         pause.play();
                 });
 
-                VBox content = new VBox(30);
+                VBox content = new VBox(24);
                 content.setAlignment(Pos.CENTER);
-                content.setPadding(new Insets(40));
+                content.setPadding(new Insets(32));
 
                 // Card Tap Instruction
-                VBox tapBox = new VBox(15);
+                VBox tapBox = new VBox(12);
                 tapBox.setAlignment(Pos.CENTER);
                 tapBox.setStyle("-fx-background-color: white; -fx-background-radius: 15; " +
-                                "-fx-padding: 40; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 3);");
+                                "-fx-padding: 28; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 3);");
                 tapBox.setMaxWidth(500);
 
-                Label tapIcon = new Label("📱");
-                tapIcon.setFont(Font.font(72));
+                ImageView tapIcon = createMenuImage("/images/presto-card.png", 180, 110);
+                tapIcon.setEffect(new DropShadow(20, Color.rgb(0, 0, 0, 0.25)));
 
                 Label tapLabel = new Label(
                                 currentLanguage == Language.FR ? "Tapez votre carte PRESTO" : "Tap your PRESTO card");
@@ -609,10 +617,10 @@ public class IGoUI extends Application {
                 tapBox.getChildren().addAll(tapIcon, tapLabel, cardField);
 
                 // Amount Selection
-                VBox amountBox = new VBox(15);
+                VBox amountBox = new VBox(12);
                 amountBox.setAlignment(Pos.CENTER);
                 amountBox.setStyle("-fx-background-color: white; -fx-background-radius: 15; " +
-                                "-fx-padding: 30; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);");
+                                "-fx-padding: 24; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);");
                 amountBox.setMaxWidth(500);
 
                 Label amountLabel = new Label(
@@ -716,14 +724,14 @@ public class IGoUI extends Application {
                 content.setPadding(new Insets(60));
 
                 // Card Tap Area
-                VBox tapBox = new VBox(20);
+                VBox tapBox = new VBox(16);
                 tapBox.setAlignment(Pos.CENTER);
                 tapBox.setStyle("-fx-background-color: white; -fx-background-radius: 20; " +
-                                "-fx-padding: 50; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 20, 0, 0, 5);");
+                                "-fx-padding: 32; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 20, 0, 0, 4);");
                 tapBox.setMaxWidth(600);
 
-                Label tapIcon = new Label("💳");
-                tapIcon.setFont(Font.font(96));
+                ImageView tapIcon = createMenuImage("/images/presto-card.png", 180, 110);
+                tapIcon.setEffect(new DropShadow(20, Color.rgb(0, 0, 0, 0.25)));
 
                 Label tapLabel = new Label(
                                 currentLanguage == Language.FR ? "Tapez votre carte PRESTO" : "Tap your PRESTO card");
@@ -1037,15 +1045,30 @@ public class IGoUI extends Application {
         }
 
         private Button createMenuButton(String title, String description, String emoji) {
+                Label emojiLabel = new Label(emoji);
+                emojiLabel.setFont(Font.font(48));
+                emojiLabel.setTextFill(Color.web(DARK_TEXT));
+                return createMenuButton(title, description, emojiLabel);
+        }
+
+        private Button createMenuButton(String title, String description, Node iconNode) {
                 VBox btnContent = new VBox(10);
                 btnContent.setAlignment(Pos.CENTER_LEFT);
                 btnContent.setPadding(new Insets(20));
 
-                HBox titleBox = new HBox(15);
+                HBox titleBox = new HBox(18);
                 titleBox.setAlignment(Pos.CENTER_LEFT);
 
-                Label emojiLabel = new Label(emoji);
-                emojiLabel.setFont(Font.font(48));
+                Node icon = iconNode;
+                if (icon instanceof Label label) {
+                        label.setFont(Font.font(48));
+                        label.setTextFill(Color.web(DARK_TEXT));
+                } else if (icon instanceof ImageView imageView) {
+                        imageView.setFitWidth(72);
+                        imageView.setFitHeight(48);
+                        imageView.setPreserveRatio(true);
+                        imageView.setSmooth(true);
+                }
 
                 VBox textBox = new VBox(5);
                 Label titleLabel = new Label(title);
@@ -1058,7 +1081,7 @@ public class IGoUI extends Application {
                 descLabel.setStyle("-fx-opacity: 0.7;");
 
                 textBox.getChildren().addAll(titleLabel, descLabel);
-                titleBox.getChildren().addAll(emojiLabel, textBox);
+                titleBox.getChildren().addAll(icon, textBox);
                 btnContent.getChildren().add(titleBox);
 
                 Button btn = new Button();
@@ -1090,6 +1113,41 @@ public class IGoUI extends Application {
                 });
 
                 return btn;
+        }
+
+        private ImageView createMenuImage(String resourcePath, double width, double height) {
+                URL resource = getClass().getResource(resourcePath);
+                Image image;
+                if (resource != null) {
+                        image = new Image(resource.toExternalForm(), width, height, true, true);
+                } else {
+                        String fallbackSvg = """
+                                        <svg xmlns='http://www.w3.org/2000/svg' width='240' height='160' viewBox='0 0 240 160'>
+                                            <defs>
+                                                <linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'>
+                                                    <stop offset='0%' stop-color='#00A651'/>
+                                                    <stop offset='100%' stop-color='#006437'/>
+                                                </linearGradient>
+                                            </defs>
+                                            <rect x='12' y='12' width='216' height='136' rx='20' fill='url(#g)'/>
+                                            <rect x='12' y='68' width='216' height='18' fill='#ffffff' opacity='0.18'/>
+                                            <rect x='30' y='40' width='60' height='10' fill='#ffffff' opacity='0.6'/>
+                                            <text x='32' y='114' font-family='Arial, Helvetica, sans-serif' font-size='44' font-weight='700' fill='#ffffff'>PRESTO</text>
+                                        </svg>
+                                        """;
+                        String encoded = URLEncoder.encode(fallbackSvg, StandardCharsets.UTF_8)
+                                        .replace("+", "%20");
+                        image = new Image("data:image/svg+xml," + encoded, width, height, true, true);
+                }
+
+                ImageView imageView = new ImageView(image);
+                imageView.setFitWidth(width);
+                imageView.setFitHeight(height);
+                imageView.setPreserveRatio(true);
+                imageView.setSmooth(true);
+                imageView.setCache(true);
+                imageView.setEffect(new DropShadow(8, Color.rgb(0, 0, 0, 0.25)));
+                return imageView;
         }
 
         private Button createActionButton(String text, String color, boolean isPrimary) {
@@ -1189,6 +1247,111 @@ public class IGoUI extends Application {
                 return field;
         }
 
+        private Node buildReceiptView(String receipt) {
+                VBox wrapper = new VBox(18);
+                wrapper.setAlignment(Pos.TOP_LEFT);
+                wrapper.setFillWidth(true);
+
+                Label badge = new Label("PRESTO");
+                badge.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 14));
+                badge.setTextFill(Color.WHITE);
+                badge.setStyle("-fx-background-color: " + PRIMARY_COLOR + "; -fx-background-radius: 12; " +
+                                "-fx-padding: 4 14; -fx-letter-spacing: 2; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 10, 0, 0, 4);");
+
+                String[] lines = receipt.split("\\r?\\n");
+                String defaultHeadline = currentLanguage == Language.FR ? "Billet PRESTO" : "PRESTO Ticket";
+                String headline = null;
+                String footerLine = null;
+                List<String[]> detailRows = new java.util.ArrayList<>();
+
+                for (String line : lines) {
+                        if (line == null) {
+                                continue;
+                        }
+                        String trimmed = line.trim();
+                        if (trimmed.isEmpty() || trimmed.startsWith("=")) {
+                                continue;
+                        }
+
+                        if (headline == null) {
+                                headline = trimmed;
+                                continue;
+                        }
+
+                        if (trimmed.startsWith("Thank") || trimmed.startsWith("Merci")) {
+                                footerLine = trimmed;
+                                continue;
+                        }
+
+                        if (line.length() >= 20) {
+                                String labelPart = line.substring(0, Math.min(20, line.length())).trim();
+                                String valuePart = line.length() > 20 ? line.substring(20).trim() : "";
+                                if (!labelPart.isEmpty()) {
+                                        if (!labelPart.endsWith(":")) {
+                                                labelPart += ":";
+                                        }
+                                        detailRows.add(new String[]{labelPart, valuePart});
+                                        continue;
+                                }
+                        }
+
+                        if (!trimmed.isEmpty()) {
+                                detailRows.add(new String[]{trimmed, ""});
+                        }
+                }
+
+                if (headline == null) {
+                        headline = defaultHeadline;
+                }
+
+                Label headlineLabel = new Label(headline);
+                headlineLabel.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 22));
+                headlineLabel.setTextFill(Color.web(DARK_TEXT));
+                headlineLabel.setWrapText(true);
+
+                GridPane detailGrid = new GridPane();
+                detailGrid.setHgap(24);
+                detailGrid.setVgap(12);
+                ColumnConstraints col1 = new ColumnConstraints();
+                col1.setPercentWidth(40);
+                ColumnConstraints col2 = new ColumnConstraints();
+                col2.setPercentWidth(60);
+                detailGrid.getColumnConstraints().addAll(col1, col2);
+
+                int rowIndex = 0;
+                for (String[] row : detailRows) {
+                        Label labelCell = new Label(row[0]);
+                        labelCell.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+                        labelCell.setTextFill(Color.web(DARK_TEXT));
+                        labelCell.setAlignment(Pos.CENTER_RIGHT);
+                        labelCell.setMaxWidth(Double.MAX_VALUE);
+
+                        Label valueCell = new Label(row[1]);
+                        valueCell.setFont(Font.font("Arial", FontWeight.MEDIUM, 16));
+                        valueCell.setTextFill(Color.web(DARK_TEXT));
+                        valueCell.setWrapText(true);
+
+                        detailGrid.add(labelCell, 0, rowIndex);
+                        detailGrid.add(valueCell, 1, rowIndex);
+                        rowIndex++;
+                }
+
+                wrapper.getChildren().addAll(badge, headlineLabel, detailGrid);
+
+                if (footerLine != null) {
+                        Separator separator = new Separator();
+                        Label footer = new Label(footerLine);
+                        footer.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, 14));
+                        footer.setTextFill(Color.web(PRIMARY_COLOR));
+                        footer.setTextAlignment(TextAlignment.CENTER);
+                        footer.setMaxWidth(Double.MAX_VALUE);
+                        footer.setAlignment(Pos.CENTER);
+                        wrapper.getChildren().addAll(separator, footer);
+                }
+
+                return wrapper;
+        }
+
         // ========================================================================
         // DIALOGS & OVERLAYS
         // ========================================================================
@@ -1228,38 +1391,227 @@ public class IGoUI extends Application {
                 layout.setCenter(overlay);
         }
 
-        private void showStyledSuccess(String title, String message, BorderPane layout) {
-                Platform.runLater(() -> {
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                        alert.setTitle(title);
-                        alert.setHeaderText(null);
-                        alert.setContentText(message);
+    private void showStyledSuccess(String title, String receipt, BorderPane layout) {
+        Platform.runLater(() -> {
+            if (rootContainer == null) {
+                Alert fallback = new Alert(Alert.AlertType.INFORMATION);
+                fallback.setTitle(title);
+                fallback.setHeaderText(null);
+                fallback.setContentText(receipt);
+                fallback.showAndWait();
+                fadeTransition(layout, () -> showMainMenu());
+                return;
+            }
 
-                        DialogPane dialogPane = alert.getDialogPane();
-                        dialogPane.setStyle("-fx-background-color: white; -fx-font-family: Arial;");
+            StackPane overlay = new StackPane();
+            overlay.setStyle("-fx-background-color: rgba(0,0,0,0.55);");
+            overlay.setOpacity(0);
+            overlay.setPickOnBounds(true);
 
-                        alert.showAndWait();
-                        fadeTransition(layout, () -> showMainMenu());
+            VBox card = new VBox(18);
+            card.setAlignment(Pos.TOP_CENTER);
+            card.setPadding(new Insets(28));
+            card.setSpacing(18);
+            card.setMaxWidth(520);
+            card.setMaxHeight(Region.USE_PREF_SIZE);
+            card.setStyle("-fx-background-color: white; -fx-background-radius: 28; " +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 40, 0, 0, 12);" +
+                    "-fx-border-radius: 28; -fx-border-width: 1; -fx-border-color: rgba(0,0,0,0.08);");
+
+            Label heading = new Label(title);
+            heading.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 30));
+            heading.setTextFill(Color.web(DARK_TEXT));
+            heading.setAlignment(Pos.CENTER);
+            heading.setMaxWidth(Double.MAX_VALUE);
+
+            Label subheading = new Label(currentLanguage == Language.FR ?
+                    "Votre billet est prêt!" : "Your ticket is ready!");
+            subheading.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, 18));
+            subheading.setTextFill(Color.web(PRIMARY_COLOR));
+            subheading.setAlignment(Pos.CENTER);
+            subheading.setMaxWidth(Double.MAX_VALUE);
+
+            Node receiptView = buildReceiptView(receipt);
+
+            ScrollPane receiptScroll = new ScrollPane(receiptView);
+            receiptScroll.setFitToWidth(true);
+            receiptScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            receiptScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            receiptScroll.setStyle("-fx-background-color: transparent; -fx-padding: 0; -fx-background-insets: 0;" +
+                    "-fx-border-color: transparent;");
+            receiptScroll.setOnScroll(evt -> evt.consume());
+            if (receiptView instanceof Region regionContent) {
+                regionContent.setMinHeight(Region.USE_PREF_SIZE);
+                double contentHeight = regionContent.prefHeight(-1) + 24;
+                double viewportCap = 420;
+                double viewportHeight = Math.min(contentHeight, viewportCap);
+                receiptScroll.setPrefViewportHeight(viewportHeight);
+                receiptScroll.setMinViewportHeight(viewportHeight);
+                receiptScroll.setMaxHeight(viewportHeight + 12);
+                if (contentHeight > viewportCap) {
+                    receiptScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+                }
+            } else {
+                receiptScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            }
+
+            Button printButton = new Button(currentLanguage == Language.FR ? "Imprimer" : "Print");
+            printButton.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+            printButton.setStyle("-fx-background-color: " + PRIMARY_COLOR + "; -fx-text-fill: white; " +
+                    "-fx-background-radius: 28; -fx-padding: 12 26; -fx-cursor: hand;" +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 2);");
+
+            Button closeButton = new Button(currentLanguage == Language.FR ? "Fermer" : "Close");
+            closeButton.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+            closeButton.setStyle("-fx-background-color: transparent; -fx-text-fill: " + DARK_TEXT + "; " +
+                    "-fx-border-color: rgba(0,0,0,0.15); -fx-border-radius: 28; -fx-background-radius: 28;" +
+                    "-fx-padding: 12 26; -fx-cursor: hand;" +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 1);");
+            closeButton.setDefaultButton(true);
+
+            HBox buttonBar = new HBox(24, printButton, closeButton);
+            buttonBar.setAlignment(Pos.CENTER);
+
+            card.getChildren().addAll(heading, subheading, receiptScroll, buttonBar);
+            card.setFillWidth(true);
+
+            overlay.getChildren().add(card);
+            StackPane.setAlignment(card, Pos.CENTER);
+
+            rootContainer.getChildren().add(overlay);
+
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(220), overlay);
+            fadeIn.setFromValue(0);
+            fadeIn.setToValue(1);
+            fadeIn.play();
+
+            Runnable closeOverlay = () -> {
+                FadeTransition fadeOut = new FadeTransition(Duration.millis(220), overlay);
+                fadeOut.setFromValue(overlay.getOpacity());
+                fadeOut.setToValue(0);
+                fadeOut.setOnFinished(evt -> {
+                    rootContainer.getChildren().remove(overlay);
+                    fadeTransition(layout, () -> showMainMenu());
                 });
-        }
+                fadeOut.play();
+            };
+
+            closeButton.setOnAction(e -> closeOverlay.run());
+
+            printButton.setOnAction(e -> {
+                printButton.setDisable(true);
+                String overlayTitle = currentLanguage == Language.FR ? "Impression" : "Printing";
+                String overlayMsg = currentLanguage == Language.FR ?
+                        "Votre reçu est envoyé à l'imprimante." :
+                        "Your receipt was sent to the printer.";
+                showOverlayMessage(overlayTitle, overlayMsg, Color.web(SUCCESS_COLOR),
+                        Duration.seconds(1.6), 460);
+
+                PauseTransition reset = new PauseTransition(Duration.seconds(1.2));
+                reset.setOnFinished(ev -> printButton.setDisable(false));
+                reset.play();
+            });
+
+            overlay.setOnMouseClicked(e -> {
+                if (e.getTarget() == overlay) {
+                    closeOverlay.run();
+                }
+            });
+        });
+    }
 
         // ========================================================================
         // ANIMATIONS
         // ========================================================================
 
-        private void showStyledError(String message, BorderPane layout) {
-                Platform.runLater(() -> {
-                        Alert alert = new Alert(Alert.AlertType.ERROR);
-                        alert.setTitle(currentLanguage == Language.FR ? "Erreur" : "Error");
-                        alert.setHeaderText(null);
-                        alert.setContentText(message);
+    private void showStyledError(String message, BorderPane layout) {
+        showOverlayMessage(
+                currentLanguage == Language.FR ? "Erreur" : "Error",
+                message,
+                Color.web(ERROR_COLOR),
+                Duration.seconds(2.8),
+                440
+        );
+    }
 
-                        DialogPane dialogPane = alert.getDialogPane();
-                        dialogPane.setStyle("-fx-background-color: white; -fx-font-family: Arial;");
+    private void showOverlayMessage(String titleText, String message, Color accentColor,
+                                    Duration duration, double maxWidth) {
+        Platform.runLater(() -> {
+            if (rootContainer == null) {
+                Alert fallback = new Alert(Alert.AlertType.INFORMATION, message, ButtonType.OK);
+                fallback.setHeaderText(titleText);
+                fallback.show();
+                return;
+            }
 
-                        alert.showAndWait();
-                });
-        }
+            StackPane overlay = new StackPane();
+            overlay.setStyle("-fx-background-color: rgba(0,0,0,0.45);");
+            overlay.setOpacity(0);
+            overlay.setPickOnBounds(true);
+
+            VBox card = new VBox(16);
+            card.setAlignment(Pos.CENTER);
+            card.setPadding(new Insets(26));
+            card.setSpacing(12);
+            card.setMaxWidth(maxWidth);
+            card.setMaxHeight(Region.USE_PREF_SIZE);
+            card.setStyle("-fx-background-color: white; -fx-background-radius: 26; -fx-border-radius: 26; " +
+                    "-fx-border-width: 2; -fx-border-color: " + toHex(accentColor) + "; " +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 26, 0, 0, 10);");
+
+            Label heading = new Label(titleText);
+            heading.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 24));
+            heading.setTextFill(accentColor);
+            heading.setWrapText(true);
+            heading.setTextAlignment(TextAlignment.CENTER);
+
+            Label detail = new Label(message);
+            detail.setFont(Font.font("Arial", FontWeight.MEDIUM, 17));
+            detail.setTextFill(Color.web(DARK_TEXT));
+            detail.setWrapText(true);
+            detail.setTextAlignment(TextAlignment.CENTER);
+
+            card.getChildren().addAll(heading, detail);
+
+            overlay.getChildren().add(card);
+            StackPane.setAlignment(card, Pos.CENTER);
+
+            rootContainer.getChildren().add(overlay);
+
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(220), overlay);
+            fadeIn.setFromValue(0);
+            fadeIn.setToValue(1);
+            fadeIn.play();
+
+            Runnable closeOverlay = () -> {
+                if (!rootContainer.getChildren().contains(overlay)) {
+                    return;
+                }
+                FadeTransition fadeOut = new FadeTransition(Duration.millis(220), overlay);
+                fadeOut.setFromValue(overlay.getOpacity());
+                fadeOut.setToValue(0);
+                fadeOut.setOnFinished(evt -> rootContainer.getChildren().remove(overlay));
+                fadeOut.play();
+            };
+
+            PauseTransition hold = new PauseTransition(duration);
+            hold.setOnFinished(e -> closeOverlay.run());
+            hold.play();
+
+            overlay.setOnMouseClicked(e -> {
+                if (e.getTarget() == overlay) {
+                    closeOverlay.run();
+                }
+            });
+        });
+    }
+
+    private String toHex(Color color) {
+        int r = (int) Math.round(color.getRed() * 255);
+        int g = (int) Math.round(color.getGreen() * 255);
+        int b = (int) Math.round(color.getBlue() * 255);
+        return String.format("#%02X%02X%02X", r, g, b);
+    }
 
         // ========================================================================
         // STYLESHEET
