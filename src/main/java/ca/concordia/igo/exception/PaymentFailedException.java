@@ -4,20 +4,6 @@ import ca.concordia.igo.util.Language;
 
 /**
  * Exception thrown when payment processing fails.
- * <p>
- * Payment failures can occur for many reasons:
- * - Card declined by payment processor
- * - Insufficient credit limit
- * - Network timeout
- * - Invalid card number/CVV
- * - Payment gateway error
- * This exception captures the transaction ID so the failure can be
- * tracked, investigated, and potentially reversed if needed.
- * The technical message (getMessage()) contains details about why the
- * payment failed for logging and troubleshooting.
- * </p>
- * The user message is kept generic to avoid exposing sensitive payment
- * details or security information.
  */
 public class PaymentFailedException extends IGoException {
     private final String transactionId;
@@ -48,13 +34,6 @@ public class PaymentFailedException extends IGoException {
 
     /**
      * Returns a generic user-friendly error message.
-     * <p>
-     * The message is intentionally vague to avoid exposing:
-     * - Specific decline reasons (embarrassing for user)
-     * - Card details or security information
-     * - Internal system error details
-     * </p>
-     *
      * It suggests recovery actions: try again or use different payment method.
      * For detailed failure info, check the technical message in logs using
      * the transaction ID.

@@ -4,19 +4,12 @@ import ca.concordia.igo.util.Language;
 
 /**
  * Exception thrown when the receipt printer is unavailable.
- * <p>
- * Printer failures can occur due to:
- * - Printer offline or disconnected
- * - Out of paper
- * - Paper jam
- * - Hardware malfunction
- * - Maintenance mode
- * </p>
+ *
  * This is a non-critical error - the transaction still succeeds even if
  * printing fails. The ticket is recorded in the system and the user can:
  * - Get help from staff to retrieve their receipt
  * - Use their payment confirmation as proof of purchase
- * - Access their ticket digitally if applicable
+ * - Access their ticket digitally if applicable,
  * The user message emphasizes that the transaction WAS saved to prevent
  * users from attempting to purchase again.
  */
