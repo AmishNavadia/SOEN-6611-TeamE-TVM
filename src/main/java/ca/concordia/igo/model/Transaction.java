@@ -5,6 +5,13 @@ import java.util.UUID;
 
 /**
  * Represents a transaction in the system.
+ * <p>
+ * Tracks all financial operations including ticket purchases, card recharges,
+ * and maintenance activities. Each transaction has a unique ID and captures
+ * the payment method, amount, and current status.
+ * </p>
+ * Transactions are mutable - their status can change as they're processed.
+ * This allows tracking of transaction lifecycle from creation to completion.
  */
 public class Transaction {
     private final String transactionId;
@@ -15,6 +22,17 @@ public class Transaction {
     private TransactionStatus status;
     private String errorMessage;
 
+    /**
+     * Creates a new transaction with PENDING status.
+     * <p>
+     * Transaction ID is auto-generated. Timestamp is set to current time.
+     * Initial status is PENDING - call setStatus() to update as processing progresses.
+     * </p>
+     *
+     * @param type the type of transaction being performed
+     * @param amount the transaction amount in dollars
+     * @param paymentMethod how the customer is paying
+     */
     public Transaction(TransactionType type, double amount, PaymentMethod paymentMethod) {
         this.transactionId = UUID.randomUUID().toString();
         this.type = type;
@@ -24,6 +42,12 @@ public class Transaction {
         this.status = TransactionStatus.PENDING;
     }
 
+    /**
+     * Returns the unique transaction ID.
+     * Auto-generated UUID, used for tracking and auditing.
+     *
+     * @return transaction ID
+     */
     public String getTransactionId() {
         return transactionId;
     }
@@ -32,6 +56,11 @@ public class Transaction {
         return type;
     }
 
+    /**
+     * Returns the transaction amount in dollars.
+     *
+     * @return amount (can be 0 for balance checks)
+     */
     public double getAmount() {
         return amount;
     }
@@ -40,6 +69,11 @@ public class Transaction {
         return paymentMethod;
     }
 
+    /**
+     * Returns when the transaction was created.
+     *
+     * @return creation timestamp (not the completion time)
+     */
     public LocalDateTime getTimestamp() {
         return timestamp;
     }
@@ -48,14 +82,35 @@ public class Transaction {
         return status;
     }
 
+    /**
+     * Updates the transaction status.
+     * <p>
+     * Call this as the transaction progresses through its lifecycle.
+     * Set to FAILED with an error message if processing fails.
+     * </p>
+     * @param status the new status
+     */
     public void setStatus(TransactionStatus status) {
         this.status = status;
     }
 
+    /**
+     * Returns error details if the transaction failed.
+     *
+     * @return error message, or null if no error occurred
+     */
     public String getErrorMessage() {
         return errorMessage;
     }
 
+    /**
+     * Sets an error message for failed transactions.
+     * <p>
+     * Typically called when setting status to FAILED.
+     * Helps with debugging and customer support.
+     * </p>
+     * @param errorMessage description of what went wrong
+     */
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
     }

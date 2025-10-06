@@ -6,6 +6,21 @@ import ca.concordia.igo.util.Language;
 
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Service for printing transit ticket receipts.
+ * <p>
+ * Formats and prints receipts in English or French with all ticket details.
+ * Printer status can be toggled for testing error handling.
+ * </p>
+ * Receipt includes:
+ * - Ticket ID (abbreviated)
+ * - Route (origin → destination, trip type)
+ * - Amount paid
+ * - Issue timestamp
+ * - Validity period
+ * In production, this would interface with actual thermal printer hardware.
+ * Currently, returns formatted string for display/testing.
+ */
 public class TicketPrinter {
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -16,10 +31,32 @@ public class TicketPrinter {
         return printerAvailable;
     }
 
+    /**
+     * Set printer availability status.
+     * Used by maintenance service to simulate printer failures
+     * for testing error handling.
+     *
+     * @param available true if printer is working, false to simulate failure
+     */
     public void setPrinterAvailable(boolean available) {
         this.printerAvailable = available;
     }
 
+    /**
+     * Print a ticket receipt in the specified language.
+     * <p>
+     * Formats the ticket information as a receipt with borders and
+     * bilingual support (English/French).
+     * </p>
+     *
+     * The receipt is 40 characters wide to fit standard thermal printers.
+     * Ticket ID is abbreviated (first 8 chars) to save space.
+     *
+     * @param ticket the ticket to print
+     * @param lang language for the receipt (Language.EN or Language.FR)
+     * @return formatted receipt as a string
+     * @throws PrinterUnavailableException if printer is offline/unavailable
+     */
     public String printTicket(Ticket ticket, Language lang) throws PrinterUnavailableException {
         if (!printerAvailable) {
             throw new PrinterUnavailableException("Printer is offline");

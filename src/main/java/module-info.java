@@ -10,6 +10,7 @@ module ca.concordia.igo {
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
+    requires annotations;
 
     opens ca.concordia.igo to javafx.fxml;
     exports ca.concordia.igo;
