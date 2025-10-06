@@ -5,11 +5,6 @@ import java.util.UUID;
 
 /**
  * Represents a transaction in the system.
- * <p>
- * Tracks all financial operations including ticket purchases, card recharges,
- * and maintenance activities. Each transaction has a unique ID and captures
- * the payment method, amount, and current status.
- * </p>
  * Transactions are mutable - their status can change as they're processed.
  * This allows tracking of transaction lifecycle from creation to completion.
  */
@@ -24,10 +19,6 @@ public class Transaction {
 
     /**
      * Creates a new transaction with PENDING status.
-     * <p>
-     * Transaction ID is auto-generated. Timestamp is set to current time.
-     * Initial status is PENDING - call setStatus() to update as processing progresses.
-     * </p>
      *
      * @param type the type of transaction being performed
      * @param amount the transaction amount in dollars
@@ -84,10 +75,7 @@ public class Transaction {
 
     /**
      * Updates the transaction status.
-     * <p>
-     * Call this as the transaction progresses through its lifecycle.
-     * Set to FAILED with an error message if processing fails.
-     * </p>
+     *
      * @param status the new status
      */
     public void setStatus(TransactionStatus status) {
@@ -105,10 +93,6 @@ public class Transaction {
 
     /**
      * Sets an error message for failed transactions.
-     * <p>
-     * Typically called when setting status to FAILED.
-     * Helps with debugging and customer support.
-     * </p>
      * @param errorMessage description of what went wrong
      */
     public void setErrorMessage(String errorMessage) {

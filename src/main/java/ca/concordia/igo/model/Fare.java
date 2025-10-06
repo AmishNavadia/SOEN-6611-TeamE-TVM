@@ -8,10 +8,6 @@ import java.util.Objects;
  * This is an immutable record used throughout the fare calculation system.
  * All fields are required and validated at construction time.
  * </p>
- * Example usage:
- * <pre>
- *   Fare fare = new Fare(Zone.ZONE_1, Zone.ZONE_3, TripType.ONE_WAY);
- * </pre>
  */
 public record Fare(Zone origin, Zone destination, TripType tripType) {
 

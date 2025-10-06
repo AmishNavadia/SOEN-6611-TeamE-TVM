@@ -35,12 +35,6 @@ public class PrestoCardService {
 
     /**
      * Initialize service with demo cards.
-     * <p>
-     * Preloaded cards for testing:
-     * - 1234567890: $25.00 balance
-     * - 9876543210: $5.50 balance
-     * - 5555555555: $0.00 balance
-     * </p>
      */
     public PrestoCardService() {
         cardDatabase.put("1234567890", new PrestoCard("1234567890", 25.00));

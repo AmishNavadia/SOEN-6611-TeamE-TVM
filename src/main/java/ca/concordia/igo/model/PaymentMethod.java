@@ -2,11 +2,6 @@ package ca.concordia.igo.model;
 
 /**
  * Payment methods accepted by the system.
- * <p>
- * Used for transaction processing and validation.
- * Different payment methods may have different processing fees,
- * limits, and validation requirements.
- * </p>
  */
 public enum PaymentMethod {
     CREDIT_CARD("Credit Card"),

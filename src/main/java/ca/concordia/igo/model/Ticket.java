@@ -6,11 +6,6 @@ import java.util.UUID;
 
 /**
  * Represents a transit ticket.
- * <p>
- * Immutable once created. Each ticket has a unique ID, captures the fare details
- * (origin, destination, trip type), and has a validity period.
- * </p>
- * Tickets are time-limited - use isValid() to check if a ticket can still be used.
  */
 public class Ticket {
     private final String ticketId;
@@ -23,7 +18,7 @@ public class Ticket {
      * Creates a new ticket with auto-generated ID.
      * <p>
      * The ticket is issued immediately (issuedAt = now) and remains valid
-     * until the specified time. Validity period depends on trip type:
+     * until the specified time. Validity period depends on a trip type:
      * - Single/Return trips: typically valid for same day
      * - Day Pass: valid until end of day
      * </p>
@@ -88,10 +83,6 @@ public class Ticket {
 
     /**
      * Checks if this ticket can still be used.
-     * <p>
-     * A ticket is valid if the current time is before the expiry time.
-     * This does NOT check if the ticket has already been used.
-     * </p>
      * @return true if the ticket hasn't expired yet, false otherwise
      */
     public boolean isValid() {

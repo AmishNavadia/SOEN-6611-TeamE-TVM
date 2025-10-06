@@ -11,11 +11,12 @@ import ca.concordia.igo.model.Zone;
  * - Additional charge per zone traveled (15% multiplier)
  * - Return trips are discounted (1.8x instead of 2x single fare)
  * - Day passes have a flat rate regardless of zones
+ * - Monthly passes have a flat rate for unlimited travel
  * </p>
  * This is a stateless service - thread-safe and can be reused.
  */
 public class FareCalculator {
-    // Pricing constants - update these when fares change
+
     private static final double BASE_FARE = 3.25;
     private static final double ZONE_MULTIPLIER = 1.15;  // 15% per zone
 
@@ -26,6 +27,7 @@ public class FareCalculator {
      * - SINGLE: Base fare and zone distance charges
      * - RETURN: Single fare * 1.8 (10% discount vs. buying two singles)
      * - DAY_PASS: Flat $13.50 regardless of zones
+     * - MONTHLY_PASS: Flat $150.00 for unlimited monthly travel
      * </p>
      *
      * @param fare the fare details including origin, destination, and trip type

@@ -5,11 +5,6 @@ import java.util.Objects;
 
 /**
  * Represents a PRESTO card - a reloadable transit card.
- * <p>
- * PRESTO cards store a balance that can be loaded with funds and used
- * to pay for transit fares. Cards expire after 5 years from creation
- * and can be deactivated if lost or stolen.
- * </p>
  * This is a mutable class - balance changes as the card is used.
  */
 public class PrestoCard {
@@ -20,12 +15,6 @@ public class PrestoCard {
 
     /**
      * Creates a new PRESTO card with zero balances.
-     * <p>
-     * Card is created with:
-     * - Zero initial balance
-     * - 5-year expiry from today
-     * - Active status
-     * </p>
      * @param cardNumber unique card identifier (cannot be null)
      * @throws NullPointerException if cardNumber is null
      */
@@ -35,10 +24,6 @@ public class PrestoCard {
 
     /**
      * Creates a new PRESTO card with an initial balance.
-     * <p>
-     * Useful for cards purchased with an initial load amount.
-     * The Card expires 5 years from creation date.
-     * </p>
      * @param cardNumber unique card identifier (cannot be null)
      * @param initialBalance starting balance in dollars
      * @throws NullPointerException if cardNumber is null
@@ -110,10 +95,6 @@ public class PrestoCard {
 
     /**
      * Checks if the card has passed its expiry date.
-     * <p>
-     * Expired cards cannot be used even if they have balance.
-     * Customers need to transfer balance to a new card.
-     * </p>
      * @return true if the card is expired, false otherwise
      */
     public boolean isExpired() {
@@ -122,11 +103,6 @@ public class PrestoCard {
 
     /**
      * Deactivates this card.
-     * <p>
-     * Called when a card is reported lost or stolen.
-     * Deactivated cards cannot be reactivated - balance must be
-     * transferred to a new card.
-     * </p>
      */
     public void deactivate() {
         this.isActive = false;

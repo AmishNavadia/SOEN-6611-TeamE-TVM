@@ -965,7 +965,8 @@ public class IGoUI extends Application {
                 try {
                     boolean success = paymentService.processPayment(transaction);
                     if (success) {
-                        Ticket ticket = new Ticket(fare, amount, LocalDateTime.now().plusHours(2));
+                        LocalDateTime validUntil = LocalDateTime.now().plus(tripType.getValidityDuration());
+                        Ticket ticket = new Ticket(fare, amount, validUntil);
 
                         // Log before printing (so failure to print is still traceable)
                         transactionRepository.log(transaction);

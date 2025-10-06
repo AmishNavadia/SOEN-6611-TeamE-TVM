@@ -6,11 +6,6 @@ import java.util.Objects;
 
 /**
  * Represents a transit zone for fare calculation.
- * <p>
- * Each zone has a unique ID and a display name. Zones are compared by ID only,
- * so two zones with the same ID are considered equal even if names differ.
- * </p>
- * Predefined zones are available as static constants (ZONE_1 through ZONE_4).
  */
 public record Zone(String zoneId, String zoneName) {
 
@@ -24,10 +19,7 @@ public record Zone(String zoneId, String zoneName) {
 
     /**
      * Compares zones based on zone ID only.
-     * <p>
-     * Zone names are ignored in equality checks - only the ID matters.
-     * This allows zone names to change without breaking equality logic.
-     * </p>
+     *
      * @param o the object to compare with
      * @return true if the zone IDs match, false otherwise
      */
@@ -41,9 +33,7 @@ public record Zone(String zoneId, String zoneName) {
 
     /**
      * Returns hash code based on zone ID only.
-     * <p>
-     * Consistent with equals() - only uses zone ID, not zone name.
-     * </p>
+     *
      * @return hash code of the zone ID
      */
     @Override
