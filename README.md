@@ -8,14 +8,15 @@ iGo is a comprehensive ticket vending machine application that provides an intui
 
 ## Features
 
-- **Ticket Purchasing**: Buy single, return, and day pass tickets with zone-based fare calculation
+- **Ticket Purchasing**: Buy single, return, day pass, and monthly pass tickets with zone-based fare calculation
 - **PRESTO Card Recharge**: Add funds to PRESTO cards using multiple payment methods
 - **Balance Checking**: View current PRESTO card balance
-- **Multi-language Support**: Full support for English and French
-- **Payment Processing**: Simulated payment processing for credit cards, debit cards, and cash
-- **Maintenance Mode**: Technician access for system diagnostics and configuration
-- **Session Management**: 30-second timeout for user sessions
+- **Multi-language Support**: Full support for English and French (bilingual interface)
+- **Payment Processing**: Simulated payment processing for credit cards, debit cards, contactless, and cash
+- **Maintenance Mode**: Technician access for system diagnostics and hardware simulation
+- **Session Management**: 60-second inactivity timeout for user sessions
 - **Transaction Logging**: Comprehensive logging of all transactions
+- **Modern UI**: Elegant interface with animations, transitions, and responsive design
 
 ## Architecture Design
 
@@ -25,36 +26,36 @@ The iGo application follows a **layered architecture** pattern with clear separa
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Presentation Layer                       │
-│                         (JavaFX UI)                          │
-│                       IGoUI.java                             │
+│                     Presentation Layer                      │
+│                         (JavaFX UI)                         │
+│                       IGoApplication.java                   │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────┼──────────────────────────────────┐
-│                     Service Layer                            │
-│  ┌────────────────┐  ┌──────────────┐  ┌─────────────────┐ │
-│  │ PaymentService │  │FareCalculator│  │PrestoCardService│ │
-│  └────────────────┘  └──────────────┘  └─────────────────┘ │
-│  ┌────────────────┐  ┌──────────────┐  ┌─────────────────┐ │
-│  │TicketPrinter  │  │SessionManager│  │MaintenanceService│ │
-│  └────────────────┘  └──────────────┘  └─────────────────┘ │
+│                     Service Layer                           │
+│  ┌────────────────┐  ┌──────────────┐  ┌─────────────────┐  │
+│  │ PaymentService │  │FareCalculator│  │PrestoCardService│  │
+│  └────────────────┘  └──────────────┘  └─────────────────┘  │
+│  ┌────────────────┐  ┌──────────────┐  ┌─────────────────-┐ │
+│  │ TicketPrinter  │  │SessionManager│  │MaintenanceService│ │
+│  └────────────────┘  └──────────────┘  └─────────────────-┘ │
 │  ┌────────────────────────────────────────────────────────┐ │
 │  │         TransactionRepository                          │ │
 │  └────────────────────────────────────────────────────────┘ │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────┼──────────────────────────────────┐
-│                      Model Layer                             │
-│  ┌──────────┐  ┌──────────┐  ┌────────┐  ┌──────────────┐  │
+│                      Model Layer                            │
+│  ┌──────────┐  ┌──────────-┐  ┌────────┐  ┌──────────────┐  │
 │  │PrestoCard│  │Transaction│  │ Ticket │  │     Fare     │  │
-│  └──────────┘  └──────────┘  └────────┘  └──────────────┘  │
-│  ┌──────────┐  ┌──────────┐  ┌────────┐  ┌──────────────┐  │
-│  │   Zone   │  │ TripType │  │PaymentM│  │TransactionSta│  │
-│  └──────────┘  └──────────┘  └────────┘  └──────────────┘  │
+│  └──────────┘  └──────────-┘  └────────┘  └──────────────┘  │
+│  ┌──────────┐  ┌──────────┐  ┌────────┐  ┌──────────────┐   │
+│  │   Zone   │  │ TripType │  │Payment │  │Transaction   │   │
+│  └──────────┘  └──────────┘  └────────┘  └──────────────┘   │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────┼──────────────────────────────────┐
-│                   Utility & Exception Layer                  │
+│                   Utility & Exception Layer                 │
 │  ┌────────────┐  ┌────────────────────────────────────────┐ │
 │  │  Logger    │  │         Exception Hierarchy            │ │
 │  │  Language  │  │  (IGoException, InvalidCardException)  │ │
@@ -66,86 +67,109 @@ The iGo application follows a **layered architecture** pattern with clear separa
 
 ```
 ca.concordia.igo/
-├── IGoUI.java                      # Main JavaFX application entry point
+├── IGoApplication.java             # Main JavaFX application entry point
 ├── model/                          # Domain models
 │   ├── PrestoCard.java             # PRESTO card entity
 │   ├── Transaction.java            # Transaction entity
 │   ├── Ticket.java                 # Ticket entity
-│   ├── Fare.java                   # Fare information
-│   ├── Zone.java                   # Transit zones
+│   ├── Fare.java                   # Fare information (record)
+│   ├── Zone.java                   # Transit zones (record)
 │   ├── TripType.java               # Trip type enumeration
 │   ├── PaymentMethod.java          # Payment method enumeration
-│   └── TransactionStatus.java      # Transaction status enumeration
+│   ├── TransactionStatus.java      # Transaction status enumeration
+│   └── TransactionType.java        # Transaction type enumeration
 ├── service/                        # Business logic layer
-│   ├── PaymentService.java         # Payment processing
-│   ├── FareCalculator.java         # Fare calculation logic
-│   ├── PrestoCardService.java      # PRESTO card operations
-│   ├── TicketPrinter.java          # Ticket printing simulation
-│   ├── SessionManager.java         # User session management
-│   ├── MaintenanceService.java     # System maintenance operations
-│   └── TransactionRepository.java  # Transaction persistence
-├── exception/                      # Custom exceptions
-│   ├── IGoException.java           # Base exception
-│   ├── InvalidCardException.java   # Invalid card error
-│   ├── PaymentFailedException.java # Payment failure error
-│   ├── InsufficientFundsException.java
-│   ├── PrinterUnavailableException.java
-│   └── ValidationException.java
+│   ├── PaymentService.java         # Payment processing with simulation
+│   ├── FareCalculator.java         # Zone-based fare calculation
+│   ├── PrestoCardService.java      # PRESTO card operations & validation
+│   ├── TicketPrinter.java          # Ticket printing with bilingual receipts
+│   ├── SessionManager.java         # User session timeout management
+│   ├── MaintenanceService.java     # System diagnostics & hardware simulation
+│   └── TransactionRepository.java  # Transaction logging & retrieval
+├── exception/                      # Custom exception hierarchy
+│   ├── IGoException.java           # Base exception class
+│   ├── InvalidCardException.java   # Invalid card errors with error codes
+│   ├── PaymentFailedException.java # Payment processing failures
+│   ├── InsufficientFundsException.java  # Insufficient PRESTO balance
+│   ├── PrinterUnavailableException.java # Printer hardware failures
+│   └── ValidationException.java    # Input validation errors
+├── ui/                             # UI components and utilities
+│   ├── DialogHelper.java           # Overlay dialogs & toast messages
+│   ├── ThemeConstants.java         # Centralized color scheme constants
+│   ├── UIComponents.java           # Reusable UI component builders
+│   └── screens/                    # Individual screen implementations
+│       ├── LanguageScreen.java     # Language selection screen
+│       ├── MainMenuScreen.java     # Main navigation menu
+│       ├── BuyTicketScreen.java    # Ticket purchase flow
+│       ├── RechargeScreen.java     # PRESTO card recharge flow
+│       ├── BalanceScreen.java      # Balance inquiry screen
+│       ├── MaintenanceLoginScreen.java      # Technician authentication
+│       └── MaintenanceDashboardScreen.java  # System diagnostics dashboard
 └── util/                           # Utility classes
-    ├── Logger.java                 # Logging utility
-    └── Language.java               # Language enumeration
+├── Logger.java                 # Logging utility
+└── Language.java               # Language enumeration (EN/FR)
 ```
 
 ### Component Details
 
-#### Presentation Layer
-- **IGoUI**: Main JavaFX application class handling all UI screens and user interactions
-- Implements modern, responsive UI with animations and transitions
-- Screens: Language Selection, Main Menu, Buy Ticket, Recharge PRESTO, Check Balance, Maintenance Dashboard
+#### Presentation Layer (UI)
+- **IGoApplication**: Main JavaFX application coordinating services and navigation
+- **Screen Classes**: Specialized screens for each user flow
+  - `LanguageScreen`: Bilingual welcome screen with language selection
+  - `MainMenuScreen`: Main navigation with animated menu tiles
+  - `BuyTicketScreen`: Ticket purchase with real-time fare calculation
+  - `RechargeScreen`: PRESTO card recharge with quick amount buttons
+  - `BalanceScreen`: Card balance inquiry
+  - `MaintenanceLoginScreen`: PIN-based technician authentication
+  - `MaintenanceDashboardScreen`: System diagnostics and hardware toggles
+- **DialogHelper**: Centralized overlay management for processing, success, and error dialogs
+- **UIComponents**: Reusable UI component factory (buttons, headers, footers, forms)
+- **ThemeConstants**: GO Transit/PRESTO color scheme constants
 
 #### Service Layer
-- **PaymentService**: Processes payments with 95% simulated success rate
-- **FareCalculator**: Zone-based fare calculation (base fare + zone multiplier)
-- **PrestoCardService**: Manages PRESTO card operations and validation
-- **TicketPrinter**: Simulates ticket printing with receipt generation
-- **SessionManager**: 30-second session timeout management
-- **MaintenanceService**: System diagnostics and configuration
-- **TransactionRepository**: Transaction logging and retrieval
+- **PaymentService**: Payment processing with 95% simulated success rate and transaction lifecycle management
+- **FareCalculator**: Zone-based fare calculation (base fare $3.25 + 15% per zone)
+- **PrestoCardService**: Card validation, recharge operations, and balance checking
+- **TicketPrinter**: Bilingual receipt generation with formatted output
+- **SessionManager**: 60-second inactivity timeout with JavaFX Timeline
+- **MaintenanceService**: PIN authentication (demo: "9999") and hardware status simulation
+- **TransactionRepository**: In-memory transaction logging and querying
 
 #### Model Layer
-- **PrestoCard**: Card number, balance, expiry date, active status
-- **Transaction**: Transaction ID, type, amount, status, payment method
-- **Ticket**: Fare details, amount, validity period
-- **Fare**: Origin, destination, trip type
-- **Enumerations**: Zone, TripType, PaymentMethod, TransactionStatus
+- **PrestoCard**: Mutable card with balance, expiry date, and active status
+- **Transaction**: Mutable transaction with status lifecycle (PENDING → AUTHORIZED → COMPLETED/FAILED)
+- **Ticket**: Immutable ticket with fare, amount, and validity period
+- **Fare**: Immutable record with origin, destination, and trip type
+- **Zone**: Immutable record for transit zones (Z1-Toronto, Z2-Mississauga, Z3-Oakville, Z4-Hamilton)
+- **Enumerations**: TripType (SINGLE, RETURN, DAY_PASS, MONTHLY_PASS), PaymentMethod, TransactionStatus, TransactionType
 
 #### Exception Handling
-- Custom exception hierarchy for domain-specific errors
-- Bilingual error messages (English/French)
-- User-friendly error reporting
+- **IGoException**: Base exception with technical messages
+- **InvalidCardException**: Card validation failures with error codes (CARD_NOT_DETECTED, CARD_EXPIRED, CARD_INACTIVE, CARD_READ_ERROR)
+- **PaymentFailedException**: Payment processing failures with transaction ID tracking
+- **InsufficientFundsException**: Balance validation with required/available amounts
+- **PrinterUnavailableException**: Non-critical printer errors
+- **ValidationException**: Input validation errors
+- All exceptions provide bilingual user messages via `getUserMessage(Language)`
 
 ### Design Patterns
 
 1. **Layered Architecture**: Clear separation between UI, business logic, and data
-2. **Service Pattern**: Business logic encapsulated in service classes
+2. **Service Pattern**: Business logic encapsulated in stateless service classes
 3. **Repository Pattern**: Transaction data access abstraction
-4. **Singleton-like Services**: Stateful services managed by UI controller
-5. **Enum Pattern**: Type-safe constants for domains (Zone, TripType, etc.)
-6. **Builder Pattern**: Complex UI component construction
-7. **Observer Pattern**: JavaFX property binding and event handling
+4. **Dependency Injection**: Manual DI through constructor in IGoApplication
+5. **Record Pattern**: Immutable data objects (Fare, Zone)
+6. **Enum Pattern**: Type-safe constants for domains
+7. **Factory Pattern**: UI component creation in UIComponents
+8. **Observer Pattern**: JavaFX property binding and event handling
+9. **State Pattern**: Transaction status lifecycle management
+10. **Strategy Pattern**: Payment method handling
 
 ### Key Technologies
 
-- **JavaFX 21**: Modern UI framework
-- **Java 21**: Latest LTS version with modern language features
+- **JavaFX 21**: Modern UI framework with animations and effects
+- **Java 21**: Latest LTS version with records and pattern matching
 - **Maven**: Build and dependency management
-- **ControlsFX**: Enhanced JavaFX controls
-- **FormsFX**: Form validation and handling
-- **ValidatorFX**: Input validation
-- **Ikonli**: Icon library integration
-- **BootstrapFX**: Bootstrap-inspired styling
-- **TilesFX**: Dashboard tiles and gauges
-- **FXGL**: Game and graphics library
 
 ## Requirements
 
@@ -154,89 +178,142 @@ ca.concordia.igo/
 - JavaFX 21
 
 ## Building and Running
-
-### Build the project
-```bash
-mvn clean install
+### Run the applicaiton
 ```
-
-### Run the application
-```bash
 mvn javafx:run
 ```
 
-### Run tests
-```bash
-mvn test
-```
-
 ## Configuration
-
-### Color Scheme
-- Primary Color: `#00A651` (GO Transit Green)
-- Secondary Color: `#003DA5` (PRESTO Blue)
-- Accent Color: `#FFB81C` (Warning Yellow)
-- Background: `#F5F5F5` (Light Grey)
+### Color Scheme(Go Transit/PRESTO)
+- Primary Color: #00A651 (GO Transit Green)
+- Secondary Color: #003DA5 (PRESTO Blue)
+- Accent Color: #FFB81C (Warning Yellow)
+- Background: #F5F5F5 (Light Grey)
+- Dark Text: #2C3E50 (Dark Blue-Grey)
+- Success: #27AE60 (Green)
+- Error: #E74C3C (Red)
 
 ### Business Rules
+
 - Base Fare: $3.25
-- Zone Multiplier: 1.15
-- Return Trip Discount: 10% (1.8x single fare)
-- Day Pass: $13.50
-- Session Timeout: 30 seconds
+- Zone Multiplier: 15% per zone (1.15x)
+- Return Trip Discount: 10% (1.8x single fare instead of 2.0x)
+- Day Pass: $13.50 (flat rate)
+- Monthly Pass: $150.00 (flat rate)
+- Session Timeout: 60 seconds of inactivity
 - Payment Success Rate: 95% (simulated)
+- Card Recharge Limits: $0.01 minimum, $1000.00 maximum per transaction
+- Card Validity: 5 years from issuance
+
+### Predefined Transit Zones
+
+- Zone 1 (Z1): Toronto
+- Zone 2 (Z2): Mississauga
+- Zone 3 (Z3): Oakville
+- Zone 4 (Z4): Hamilton
 
 ### Maintenance Access
-- Technician PIN: Configured in MaintenanceService
-- Features: System diagnostics, printer toggle, network toggle, transaction log viewing
+
+- Technician PIN: 9999 (demo purposes only)
+- Features:
+  - System diagnostics (Network, Printer, NFC Reader status)
+  - Hardware simulation toggles (Printer, Network)
+  - Recent transaction viewing (last 10 transactions)
+
+### Demo PRESTO Cards
+The system includes pre-populated demo cards for testing:
+
+- `1234567890`: Balance $25.00
+- `9876543210`: Balance $5.50
+- `5555555555`: Balance $0.00
 
 ## Project Structure
-
 ```
 iGo/
 ├── src/
 │   ├── main/
 │   │   ├── java/
 │   │   │   └── ca/concordia/igo/
-│   │   │       ├── IGoUI.java
+│   │   │       ├── IGoApplication.java
+│   │   │       ├── exception/
 │   │   │       ├── model/
 │   │   │       ├── service/
-│   │   │       ├── exception/
+│   │   │       ├── ui/
+│   │   │       │   ├── screens/
+│   │   │       │   ├── DialogHelper.java
+│   │   │       │   ├── ThemeConstants.java
+│   │   │       │   └── UIComponents.java
 │   │   │       └── util/
 │   │   └── resources/
 │   │       └── images/
 │   │           ├── ticket.png
-│   │           └── presto-card.png
+│   │           ├── presto-card.png
+│   │           └── tool.png
 │   └── test/
 │       └── java/
 ├── pom.xml
 └── README.md
 ```
+## User Flows
+1. Buy Ticket Flow
 
-## Use Cases
+Select language (English/French)
+Choose "Buy Ticket" from main menu
+Select origin zone
+Select destination zone
+Choose trip type (Single/Return/Day Pass/Monthly Pass)
+Select payment method
+View calculated fare amount
+Confirm purchase
+Process payment (2-second simulation)
+View success overlay with formatted receipt
+Option to print receipt
+Return to main menu
 
-1. **Buy Single Ticket**: Select origin/destination zones, choose payment method, complete purchase
-2. **Buy Return Ticket**: Similar to single ticket with 10% discount
-3. **Buy Day Pass**: Fixed price unlimited travel
-4. **Recharge PRESTO Card**: Tap card, select amount, process payment
-5. **Check Balance**: Tap card to view current balance
-6. **Maintenance Mode**: Technician login, view diagnostics, configure system
+2. Recharge PRESTO Card Flow
 
-## Future Enhancements
+Select "Recharge PRESTO" from main menu
+Tap/enter PRESTO card number
+Select recharge amount (quick buttons: $10, $20, $50, $100 or custom)
+Select payment method
+Confirm recharge
+Process payment
+Update card balance
+View new balance in success dialog
+Return to main menu
 
-- Integration with real PRESTO card readers
-- Database persistence for transactions
-- Network connectivity for real-time card validation
-- Multi-screen kiosk support
-- Accessibility features (screen reader, high contrast mode)
-- Mobile app integration
-- Real-time transit information
-- Receipt email/SMS options
+3. Check Balance Flow
 
-## Contributors
+Select "Check Balance" from main menu
+Tap/enter PRESTO card number
+View current balance with animated display
+Return to main menu
 
-Developed at Concordia University
+4. Maintenance Flow
 
-## License
+Select "Maintenance" from main menu
+Enter technician PIN (9999)
+View system diagnostics dashboard
+Toggle printer/network status for testing
+View recent transaction log
+Return to main menu
 
-All rights reserved.
+Error Handling
+The system provides comprehensive error handling with bilingual messages:
+
+Invalid Card: Card not detected, expired, or inactive
+Insufficient Funds: Insufficient balance for fare
+Payment Failed: Payment declined or network error
+Printer Unavailable: Receipt printing failure (transaction still saved)
+Validation Errors: Invalid input amounts or missing fields
+Session Timeout: Automatic return to main menu after 60s inactivity
+
+All errors display user-friendly messages in the selected language with recovery instructions.
+Internationalization (i18n)
+The application supports English and French with:
+
+Complete UI translation
+Bilingual error messages
+Formatted receipts in both languages
+Language toggle available on every screen
+Persistent language selection throughout session
