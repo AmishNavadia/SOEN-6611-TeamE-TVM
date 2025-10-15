@@ -38,8 +38,13 @@ public class TransactionRepository {
      * @param t the transaction to log
      */
     public void log(Transaction t) {
+        // LOG 11: Transaction persistence
         transactions.add(t);
-        Logger.info("Transaction logged: " + t.getTransactionId());
+        Logger.info("Transaction logged to repository - ID: " + t.getTransactionId() +
+                ", Type: " + t.getType() +
+                ", Status: " + t.getStatus() +
+                ", Amount: $" + t.getAmount());
+        Logger.debug("Total transactions in repository: " + transactions.size());
     }
 
     /**
@@ -52,9 +57,12 @@ public class TransactionRepository {
      * @return list of recent transactions, the newest first (empty list if none)
      */
     public List<Transaction> getRecent(int limit) {
-        return transactions.stream()
+        Logger.debug("Retrieving recent transactions - Limit: " + limit);
+        List<Transaction> recent = transactions.stream()
                 .sorted(Comparator.comparing(Transaction::getTimestamp).reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
+        Logger.debug("Retrieved " + recent.size() + " recent transactions");
+        return recent;
     }
 }

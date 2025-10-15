@@ -17,6 +17,7 @@ import ca.concordia.igo.ui.screens.MaintenanceDashboardScreen;
 import ca.concordia.igo.ui.screens.MaintenanceLoginScreen;
 import ca.concordia.igo.ui.screens.RechargeScreen;
 import ca.concordia.igo.util.Language;
+import ca.concordia.igo.util.Logger;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
@@ -87,6 +88,7 @@ public class IGoApplication extends Application {
 
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
+        Logger.info("Application initialized successfully");
         primaryStage.show();
     }
 
@@ -128,6 +130,8 @@ public class IGoApplication extends Application {
      * Navigates to a new screen by replacing the main content area.
      */
     public void navigateTo(Node view) {
+        Logger.userAction("SCREEN_NAVIGATION", "Navigating to: " +
+                view.getClass().getSimpleName());
         mainContainer.setCenter(view);
     }
 

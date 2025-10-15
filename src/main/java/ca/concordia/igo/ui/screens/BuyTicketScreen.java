@@ -229,6 +229,11 @@ public class BuyTicketScreen {
                                 TripType tripType,
                                 PaymentMethod paymentMethod,
                                 BorderPane layout) {
+        // LOG 5: Purchase flow initiated
+        Logger.userAction("TICKET_PURCHASE_INITIATED",
+                "Origin: " + origin + ", Dest: " + dest +
+                        ", Type: " + tripType + ", Payment: " + paymentMethod);
+
         app.getSessionManager().resetTimer();
         try {
             Fare fare = new Fare(origin, dest, tripType);
@@ -239,6 +244,8 @@ public class BuyTicketScreen {
                     amount,
                     paymentMethod
             );
+            Logger.transaction(transaction.getTransactionId(),
+                    "Transaction created for ticket purchase - Amount: $" + amount);
 
             app.showProcessingOverlay(layout, app.t("purchase.processing"));
 
@@ -248,18 +255,31 @@ public class BuyTicketScreen {
                 try {
                     boolean success = app.getPaymentService().processPayment(transaction);
                     if (success) {
+                        // NEW: Get approval timestamp for latency measurement
+                        Long approvalTime = app.getPaymentService()
+                                .getApprovalTimestamp(transaction.getTransactionId());
+
                         LocalDateTime validUntil = LocalDateTime.now().plus(tripType.getValidityDuration());
                         Ticket ticket = new Ticket(fare, amount, validUntil);
 
-                        app.getTransactionRepository().log(transaction);
-                        String receipt = app.getTicketPrinter().printTicket(ticket, app.getCurrentLanguage());
+                        Logger.info("Ticket generated - ID: " + ticket.getTicketId() +
+                                ", Valid until: " + validUntil);
 
+                        app.getTransactionRepository().log(transaction);
+                        // NEW: Pass approval timestamp to measure latency
+                        String receipt = app.getTicketPrinter()
+                                .printTicket(ticket, app.getCurrentLanguage(), approvalTime);
+//                        String receipt = app.getTicketPrinter().printTicket(ticket, app.getCurrentLanguage());
+
+                        Logger.userAction("TICKET_PURCHASE_COMPLETED",
+                                "Ticket ID: " + ticket.getTicketId());
                         app.showStyledSuccess(app.t("purchase.success"), receipt, layout);
                     }
                 } catch (PaymentFailedException ex) {
+                    Logger.error("Payment failed for ticket purchase", ex);
                     app.showStyledError(ex.getUserMessage(app.getCurrentLanguage()));
                 } catch (Exception ex) {
-                    Logger.error("Purchase failed", ex);
+                    Logger.error("Ticket purchase failed", ex);
                     app.showStyledError(app.t("purchase.error"));
                 }
             });

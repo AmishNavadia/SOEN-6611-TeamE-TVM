@@ -1,6 +1,7 @@
 package ca.concordia.igo.exception;
 
 import ca.concordia.igo.util.Language;
+import ca.concordia.igo.util.Logger;
 
 /**
  * Exception thrown when a PRESTO card fails validation.
@@ -24,6 +25,9 @@ public class InvalidCardException extends IGoException {
     public InvalidCardException(ErrorCode code, String technicalMsg) {
         super(technicalMsg);
         this.code = code;
+        // LOG 6: Card validation exception
+        Logger.warn("InvalidCardException thrown - Code: " + code +
+                ", Message: " + technicalMsg);
     }
 
     /**

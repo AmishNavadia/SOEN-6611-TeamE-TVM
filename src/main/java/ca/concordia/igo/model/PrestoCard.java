@@ -2,6 +2,7 @@ package ca.concordia.igo.model;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import ca.concordia.igo.util.TokenUtil;
 
 /**
  * Represents a PRESTO card - a reloadable transit card.
@@ -35,8 +36,34 @@ public class PrestoCard {
         this.isActive = true;
     }
 
+    /**
+     * Returns the full card number (internal use only).
+     * WARNING: This exposes sensitive PAN data. Use getMaskedCardNumber() for display.
+     *
+     * @return full unmasked card number
+     */
     public String getCardNumber() {
         return cardNumber;
+    }
+
+    /**
+     * Returns masked card number for display (PCI-DSS compliant).
+     * Shows only the last 4 digits: "******7890"
+     *
+     * @return masked card number safe for display
+     */
+    public String getMaskedCardNumber() {
+        return TokenUtil.maskCardNumber(cardNumber);
+    }
+
+    /**
+     * Returns formatted masked card number for display.
+     * Example: "**** **** **** 7890"
+     *
+     * @return formatted masked card number
+     */
+    public String getMaskedCardNumberFormatted() {
+        return TokenUtil.maskCardNumberFormatted(cardNumber);
     }
 
     /**

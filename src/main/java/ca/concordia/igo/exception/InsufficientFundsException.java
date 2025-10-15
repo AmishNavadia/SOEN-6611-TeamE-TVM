@@ -1,6 +1,7 @@
 package ca.concordia.igo.exception;
 
 import ca.concordia.igo.util.Language;
+import ca.concordia.igo.util.Logger;
 
 /**
  * Exception thrown when a PRESTO card has insufficient balance for a transaction.
@@ -20,6 +21,9 @@ public class InsufficientFundsException extends IGoException {
                 required, available));
         this.required = required;
         this.available = available;
+        // LOG 7: Insufficient funds exception
+        Logger.warn("InsufficientFundsException - Required: $" + required +
+                ", Available: $" + available);
     }
 
     /**

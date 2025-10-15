@@ -3,6 +3,7 @@ package ca.concordia.igo.service;
 import ca.concordia.igo.exception.PrinterUnavailableException;
 import ca.concordia.igo.model.Ticket;
 import ca.concordia.igo.util.Language;
+import ca.concordia.igo.util.Logger;
 
 import java.time.format.DateTimeFormatter;
 
@@ -39,6 +40,7 @@ public class TicketPrinter {
      * @param available true if printer is working, false to simulate failure
      */
     public void setPrinterAvailable(boolean available) {
+        Logger.info("Printer status changed - Available: " + available);
         this.printerAvailable = available;
     }
 
@@ -54,11 +56,38 @@ public class TicketPrinter {
      *
      * @param ticket the ticket to print
      * @param lang language for the receipt (Language.EN or Language.FR)
+     * @param approvalTimestamp optional timestamp when ticket was approved;
      * @return formatted receipt as a string
      * @throws PrinterUnavailableException if printer is offline/unavailable
      */
-    public String printTicket(Ticket ticket, Language lang) throws PrinterUnavailableException {
+    public String printTicket(Ticket ticket, Language lang, Long approvalTimestamp) throws PrinterUnavailableException {
+        // LOG 10: Print operation
+        Logger.info("Ticket print requested - Ticket ID: " + ticket.getTicketId() +
+                ", Language: " + lang );
+        long printStartTime = System.currentTimeMillis();
+        // NEW: Calculate output latency if approval timestamp is provided
+        if (approvalTimestamp != null) {
+            long latency = printStartTime - approvalTimestamp;
+            Logger.info("════════════════════════════════════════");
+            Logger.info("OUTPUT LATENCY MEASUREMENT");
+            Logger.info("Ticket ID: " + ticket.getTicketId());
+            Logger.info("Approval Time: " + approvalTimestamp);
+            Logger.info("Output Start Time: " + printStartTime);
+            Logger.info("OUTPUT LATENCY: " + latency + " ms (" +
+                    (latency / 1000.0) + " seconds)");
+
+            // Check if latency meets requirement (≤ 3 seconds)
+            if (latency <= 3000) {
+                Logger.info("LATENCY REQUIREMENT MET (≤ 3 seconds)");
+            } else {
+                Logger.warn("LATENCY REQUIREMENT EXCEEDED (> 3 seconds)");
+            }
+            Logger.info("════════════════════════════════════════");
+        }
+
         if (!printerAvailable) {
+            Logger.error("Printer unavailable - cannot print ticket: " +
+                    ticket.getTicketId());
             throw new PrinterUnavailableException("Printer is offline");
         }
 
@@ -88,7 +117,19 @@ public class TicketPrinter {
                         "    Thank you for using PRESTO!\n") +
                 "=".repeat(40) + "\n";
 
+        long printEndTime = System.currentTimeMillis();
+        long printDuration = printEndTime - printStartTime;
+
+        Logger.performance("Ticket Printing", printDuration);
+        Logger.info("Ticket printed successfully - Ticket ID: " + ticket.getTicketId());
         return receipt;
+    }
+    /**
+     * Overloaded method for backward compatibility
+     */
+    public String printTicket(Ticket ticket, Language lang)
+            throws PrinterUnavailableException {
+        return printTicket(ticket, lang, null);
     }
 }
 

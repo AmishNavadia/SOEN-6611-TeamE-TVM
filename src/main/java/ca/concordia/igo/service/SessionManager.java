@@ -1,5 +1,6 @@
 package ca.concordia.igo.service;
 
+import ca.concordia.igo.util.Logger;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
@@ -21,7 +22,7 @@ import javafx.util.Duration;
  * The caller provides the timeout action (e.g., return to home screen) * as a Runnable.
  */
 public class SessionManager {
-    private static final int TIMEOUT_SECONDS = 60; // Inactivity timeout
+    private static final int TIMEOUT_SECONDS = 300; // Inactivity timeout
     private Timeline timeoutTimer;
     private Runnable onTimeout;
 
@@ -37,6 +38,8 @@ public class SessionManager {
      * @param timeoutAction what to do when session times out
      */
     public void startSession(Runnable timeoutAction) {
+        // LOG 9: Session lifecycle
+        Logger.info("User session started - Timeout: " + TIMEOUT_SECONDS + " seconds");
         this.onTimeout = timeoutAction;
         resetTimer();
     }
@@ -51,10 +54,14 @@ public class SessionManager {
      * the timer keeps resetting and the session stays alive.
      */
     public void resetTimer() {
+        Logger.debug("Session timer reset - extending session");
         if (timeoutTimer != null) timeoutTimer.stop();
         timeoutTimer = new Timeline(new KeyFrame(
                 Duration.seconds(TIMEOUT_SECONDS),
-                e -> onTimeout.run()
+                e -> {
+                    Logger.warn("Session timeout occurred - returning to main menu");
+                    onTimeout.run();
+                }
         ));
         timeoutTimer.play();
     }
@@ -71,6 +78,7 @@ public class SessionManager {
      * has already been properly concluded.
      */
     public void endSession() {
+        Logger.info("User session ended");
         if (timeoutTimer != null) timeoutTimer.stop();
     }
 }

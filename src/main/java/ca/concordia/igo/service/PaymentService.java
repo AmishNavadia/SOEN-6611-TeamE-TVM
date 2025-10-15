@@ -4,6 +4,7 @@ import ca.concordia.igo.exception.PaymentFailedException;
 import ca.concordia.igo.model.PaymentMethod;
 import ca.concordia.igo.model.Transaction;
 import ca.concordia.igo.model.TransactionStatus;
+import ca.concordia.igo.util.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,8 @@ import java.util.Random;
 public class PaymentService {
     private final Map<String, Transaction> activeTransactions = new HashMap<>();
     private final Random random = new Random();
+    private final Map<String, Long> approvalTimestamps = new HashMap<>(); // NEW: Track approval time
+
 
     /**
      * Process a payment transaction.
@@ -42,20 +45,40 @@ public class PaymentService {
      * @throws PaymentFailedException if payment is declined or errors occur
      */
     public boolean processPayment(Transaction transaction) throws PaymentFailedException {
+        // LOG 1: Transaction initiated
+        Logger.transaction(transaction.getTransactionId(),
+                "Payment processing started - Type: " + transaction.getType() +
+                        ", Amount: $" + transaction.getAmount() +
+                        ", Method: " + transaction.getPaymentMethod());
+
+        long startTime = System.currentTimeMillis();
+
         activeTransactions.put(transaction.getTransactionId(), transaction);
 
         try {
             // Step 1: Authorize payment (reserve funds)
             transaction.setStatus(TransactionStatus.AUTHORIZED);
+            Logger.transaction(transaction.getTransactionId(),
+                    "Payment authorized - Status: AUTHORIZED");
 
             // Step 2: Attempt to capture payment
             boolean success = simulatePayment(transaction.getPaymentMethod());
 
             if (success) {
                 transaction.setStatus(TransactionStatus.COMPLETED);
+                long approvalTime = System.currentTimeMillis();
+                approvalTimestamps.put(transaction.getTransactionId(), approvalTime);
+
+                long processingDuration = approvalTime - startTime;
+                Logger.performance("Payment Processing", processingDuration);
+                Logger.transaction(transaction.getTransactionId(),
+                        "✓ PAYMENT APPROVED at " + approvalTime + " (Processing time: " +
+                                processingDuration + "ms)");
                 return true;
             } else {
                 transaction.setStatus(TransactionStatus.FAILED);
+                Logger.transaction(transaction.getTransactionId(),
+                        "Payment declined by provider");
                 throw new PaymentFailedException(
                         transaction.getTransactionId(),
                         "Payment declined by provider"
@@ -64,11 +87,19 @@ public class PaymentService {
         } catch (Exception e) {
             transaction.setStatus(TransactionStatus.FAILED);
             transaction.setErrorMessage(e.getMessage());
+            Logger.error("Payment processing failed for transaction: " +
+                    transaction.getTransactionId(), e);
             throw new PaymentFailedException(
                     transaction.getTransactionId(),
                     e.getMessage()
             );
         }
+    }
+    /**
+     * Get the approval timestamp for a transaction
+     */
+    public Long getApprovalTimestamp(String transactionId) {
+        return approvalTimestamps.get(transactionId);
     }
 
     /**

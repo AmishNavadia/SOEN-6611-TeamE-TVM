@@ -1,5 +1,7 @@
 package ca.concordia.igo.service;
 
+import ca.concordia.igo.util.Logger;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,7 +34,15 @@ public class MaintenanceService {
      * @return true if PIN matches, false otherwise
      */
     public boolean authenticate(String pin) {
-        return ADMIN_PIN.equals(pin);
+        // LOG 12: Security/Maintenance operations
+        Logger.info("Maintenance authentication attempt");
+        boolean success = ADMIN_PIN.equals(pin);
+        if (success) {
+            Logger.info("Maintenance authentication successful");
+        } else {
+            Logger.warn("Maintenance authentication failed - incorrect PIN");
+        }
+        return success;
     }
 
     /**
@@ -61,6 +71,8 @@ public class MaintenanceService {
      */
     public void togglePrinter() {
         printerAvailable = !printerAvailable;
+        Logger.info("Printer toggled - New status: " +
+                (printerAvailable ? "AVAILABLE" : "UNAVAILABLE"));
     }
 
     /**
@@ -72,6 +84,8 @@ public class MaintenanceService {
      */
     public void toggleNetwork() {
         systemOnline = !systemOnline;
+        Logger.info("Network toggled - New status: " +
+                (systemOnline ? "ONLINE" : "OFFLINE"));
     }
 
     public boolean isPrinterAvailable() {

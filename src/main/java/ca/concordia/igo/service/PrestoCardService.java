@@ -76,9 +76,13 @@ public class PrestoCardService {
      * @throws InvalidCardException if card fails any validation check
      */
     public PrestoCard readCard(String cardNumber) throws InvalidCardException {
+        // LOG 2: Card read attempt
+        Logger.info("Card read attempt - Card number: " + cardNumber);
+
         PrestoCard card = cardDatabase.get(cardNumber);
 
         if (card == null) {
+            Logger.warn("Card not found in database - Card: " + cardNumber);
             throw new InvalidCardException(
                     InvalidCardException.ErrorCode.CARD_NOT_DETECTED,
                     "Card not found: " + cardNumber
@@ -86,6 +90,8 @@ public class PrestoCardService {
         }
 
         if (card.isExpired()) {
+            Logger.warn("Card expired - Card: " + cardNumber +
+                    ", Expiry: " + card.getExpiryDate());
             throw new InvalidCardException(
                     InvalidCardException.ErrorCode.CARD_EXPIRED,
                     "Card expired: " + cardNumber
@@ -93,12 +99,14 @@ public class PrestoCardService {
         }
 
         if (!card.isActive()) {
+            Logger.warn("Card inactive - Card: " + cardNumber);
             throw new InvalidCardException(
                     InvalidCardException.ErrorCode.CARD_INACTIVE,
                     "Card inactive: " + cardNumber
             );
         }
-
+        Logger.info("Card read successful - Card: " + cardNumber +
+                ", Balance: $" + card.getBalance());
         return card;
     }
 
@@ -120,20 +128,31 @@ public class PrestoCardService {
      * @throws InvalidCardException if the card is not valid
      */
     public void rechargeCard(PrestoCard card, double amount) throws InvalidCardException {
+        // LOG 3: Recharge operation
+        Logger.info("Card recharge initiated - Card: " + card.getCardNumber() +
+                ", Amount: $" + amount +
+                ", Current Balance: $" + card.getBalance());
+
         if (amount <= 0) {
+            Logger.error("Invalid recharge amount: " + amount);
             throw new IllegalArgumentException("Recharge amount must be positive");
         }
 
         if (amount > 1000) {
+            Logger.error("Recharge amount exceeds maximum: " + amount);
             throw new IllegalArgumentException("Maximum recharge amount is $1000");
         }
-
+        double oldBalance = card.getBalance();
         card.addBalance(amount);
+        Logger.info("Card recharge completed - Card: " + card.getCardNumber() +
+                ", Old Balance: $" + oldBalance +
+                ", New Balance: $" + card.getBalance());
 
         // NEW: Check network and queue if offline
         if (!networkAvailable) {
             pendingRecharges.add(card.getCardNumber() + ":" + amount);
-            Logger.info("Recharge queued for sync: " + card.getCardNumber());
+            Logger.warn("Recharge queued for sync (network unavailable) - Card: " +
+                    card.getCardNumber());
         }
 
     }

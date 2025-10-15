@@ -2,6 +2,7 @@ package ca.concordia.igo.service;
 
 import ca.concordia.igo.model.Fare;
 import ca.concordia.igo.model.Zone;
+import ca.concordia.igo.util.Logger;
 
 /**
  * Service for calculating transit fares based on zones and trip types.
@@ -34,21 +35,40 @@ public class FareCalculator {
      * @return calculated fare amount in dollars
      */
     public double calculateAmount(Fare fare) {
+        // LOG 4: Fare calculation
+        Logger.info("Fare calculation started - " + fare.toString());
+
         int zoneDistance = calculateZoneDistance(fare.origin(), fare.destination());
         double baseFare = BASE_FARE + (zoneDistance * BASE_FARE * ZONE_MULTIPLIER);
 
+        Logger.debug("Base fare calculated - Zones: " + zoneDistance +
+                ", Base: $" + baseFare);
+        double finalAmount;
         switch (fare.tripType()) {
             case SINGLE:
-                return baseFare;
+                finalAmount = baseFare;
+                Logger.debug("Single trip fare: $" + finalAmount);
+                break;
             case RETURN:
-                return baseFare * 1.8; // 10% discount for return
+                finalAmount = baseFare * 1.8;
+                Logger.debug("Return trip fare (10% discount): $" + finalAmount);
+                break;
             case DAY_PASS:
-                return 13.50;  // Flat rate for unlimited daily travel
+                finalAmount = 13.50;
+                Logger.debug("Day pass flat rate: $" + finalAmount);
+                break;
             case MONTHLY_PASS:
-                return 150.00; // Flat rate for monthly pass
+                finalAmount = 150.00;
+                Logger.debug("Monthly pass flat rate: $" + finalAmount);
+                break;
             default:
-                return baseFare;
+                finalAmount = baseFare;
+                Logger.debug("Default fare: $" + finalAmount);
         }
+
+        Logger.info("Fare calculation completed - " + fare.toString() +
+                " = $" + finalAmount);
+        return finalAmount;
     }
 
     /**

@@ -5,6 +5,7 @@ import ca.concordia.igo.exception.InvalidCardException;
 import ca.concordia.igo.model.PrestoCard;
 import ca.concordia.igo.ui.UIComponents;
 import ca.concordia.igo.util.Logger;
+import ca.concordia.igo.util.TokenUtil;
 import javafx.animation.ScaleTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -29,7 +30,7 @@ import static ca.concordia.igo.ui.ThemeConstants.SUCCESS_COLOR;
 
 /**
  * Balance inquiry screen for checking PRESTO card balance.
- * Allows users to tap their card and view current balance with validation.
+ * Allows users to tap their card and view the current balance with validation.
  * Includes session timeout management and error handling.
  */
 public class BalanceScreen {
@@ -121,9 +122,19 @@ public class BalanceScreen {
             String cardNumber = cardField.getText().trim();
             PrestoCard card = app.getPrestoService().readCard(cardNumber);
 
-            // Display balance with animation
-            balanceLabel.setText(String.format("$%.2f", card.getBalance()));
+            // LOG: Mask card number in logs for security
+            Logger.info("Balance check completed for card: " +
+                    TokenUtil.maskCardNumber(cardNumber));
+
+            // Display balance with masked card number
+            balanceLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+            balanceLabel.setText(String.format("Card: %s\nBalance: $%.2f",
+                    card.getMaskedCardNumberFormatted(),
+                    card.getBalance()));
             balanceLabel.setVisible(true);
+//            // Display balance with animation
+//            balanceLabel.setText(String.format("$%.2f", card.getBalance()));
+//            balanceLabel.setVisible(true);
 
             ScaleTransition scale = new ScaleTransition(Duration.millis(300), balanceLabel);
             scale.setFromX(0.5);

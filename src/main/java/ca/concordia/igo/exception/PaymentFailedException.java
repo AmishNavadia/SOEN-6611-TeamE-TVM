@@ -1,6 +1,7 @@
 package ca.concordia.igo.exception;
 
 import ca.concordia.igo.util.Language;
+import ca.concordia.igo.util.Logger;
 
 /**
  * Exception thrown when payment processing fails.
@@ -17,6 +18,9 @@ public class PaymentFailedException extends IGoException {
     public PaymentFailedException(String transactionId, String message) {
         super(message);
         this.transactionId = transactionId;
+        // LOG 8: Payment failure exception
+        Logger.error("PaymentFailedException - Transaction: " + transactionId +
+                ", Reason: " + message);
     }
 
     /**
