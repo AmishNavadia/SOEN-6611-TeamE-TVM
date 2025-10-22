@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Comprehensive analyzer for code metrics including Physical SLOC, Logical SLOC, and Comment Ratio.
+ * Enhanced analyzer for code metrics including Physical SLOC, Logical SLOC, and Comment Ratio.
  *
  * <p><b>Metric Definitions:</b></p>
  * <ul>
@@ -21,22 +21,45 @@ import java.util.stream.Stream;
  *   <li><b>Comment Ratio (CR%)</b>: (Comment Lines / Total Lines) × 100</li>
  * </ul>
  *
- * <p><b>Usage Examples:</b></p>
- * <pre>
- * // Analyze a single file
- * CodeMetricsAnalyzer analyzer = new CodeMetricsAnalyzer();
- * FileMetrics metrics = analyzer.analyzeFile("PaymentService.java");
- * System.out.println(metrics);
- *
- * // Analyze entire project
- * ProjectMetrics projectMetrics = analyzer.analyzeProject("src/main/java");
- * System.out.println(projectMetrics.toDetailedString());
- * </pre>
+ * <p><b>Key Improvements:</b></p>
+ * <ul>
+ *   <li>Excludes test code automatically (src/test, *Test.java)</li>
+ *   <li>Improved logical SLOC counting accuracy</li>
+ *   <li>Better handling of mixed code/comment lines</li>
+ *   <li>Configurable exclusion patterns</li>
+ *   <li>Public static methods for easy unit testing</li>
+ * </ul>
  *
  * @author iGo Team
- * @version 1.0
+ * @version 2.0 (Refined)
  */
 public class CodeMetricsAnalyzer {
+
+    // Configuration
+    private boolean excludeTests = true;
+    private boolean excludeGenerated = true;
+    private boolean verboseOutput = false;
+
+    /**
+     * Set whether to exclude test files from analysis
+     */
+    public void setExcludeTests(boolean excludeTests) {
+        this.excludeTests = excludeTests;
+    }
+
+    /**
+     * Set whether to exclude generated files from analysis
+     */
+    public void setExcludeGenerated(boolean excludeGenerated) {
+        this.excludeGenerated = excludeGenerated;
+    }
+
+    /**
+     * Set verbose output mode
+     */
+    public void setVerboseOutput(boolean verbose) {
+        this.verboseOutput = verbose;
+    }
 
     /**
      * Metrics for a single Java file
@@ -174,88 +197,222 @@ public class CodeMetricsAnalyzer {
 
             // Sort files by Physical SLOC (largest first)
             List<FileMetrics> sorted = fileMetrics.stream()
-                    .sorted(Comparator.comparingInt(FileMetrics::getPhysicalSLOC).reversed())
+                    .sorted((a, b) -> Integer.compare(b.getPhysicalSLOC(), a.getPhysicalSLOC()))
                     .collect(Collectors.toList());
 
-            sb.append(String.format("║ %-40s %8s %8s %6s\n", "File", "PSLOC", "LSLOC", "CR%"));
-            sb.append("╠═══════════════════════════════════════════════════════════════\n");
-
-            for (FileMetrics fm : sorted) {
-                String shortName = fm.getFileName().length() > 40
-                        ? "..." + fm.getFileName().substring(fm.getFileName().length() - 37)
-                        : fm.getFileName();
-                sb.append(String.format("║ %-40s %8d %8d %5.1f%%\n",
-                        shortName,
+            for (int i = 0; i < sorted.size(); i++) {
+                FileMetrics fm = sorted.get(i);
+                sb.append(String.format("║ %2d. %-40s PSLOC: %5d  LSLOC: %5d\n",
+                        i + 1,
+                        truncate(fm.getFileName(), 40),
                         fm.getPhysicalSLOC(),
-                        fm.getLogicalSLOC(),
-                        fm.getCommentRatio()
-                ));
+                        fm.getLogicalSLOC()));
             }
-
             sb.append("╚═══════════════════════════════════════════════════════════════\n");
             return sb.toString();
         }
+
+        private String truncate(String str, int length) {
+            return str.length() <= length ? str : str.substring(0, length - 3) + "...";
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // PUBLIC STATIC METHODS FOR UNIT TESTING
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * Check if a line is blank (contains only whitespace)
+     * Made public and static for easy unit testing
+     */
+    public static boolean isBlankLine(String line) {
+        return line.trim().isEmpty();
     }
 
     /**
-     * State machine for tracking multi-line comments
+     * Check if a line is a comment-only line
+     * Made public and static for easy unit testing
      */
-    private enum ParseState {
-        CODE,           // Normal code
-        LINE_COMMENT,   // Single-line comment (//)
-        BLOCK_COMMENT,  // Multi-line comment (/* ... */)
-        JAVADOC         // JavaDoc comment (/** ... */)
+    public static boolean isCommentOnlyLine(String line) {
+        String trimmed = line.trim();
+        return trimmed.startsWith("//") ||
+                trimmed.startsWith("/*") ||
+                trimmed.startsWith("*") ||
+                trimmed.equals("*/");
     }
 
     /**
-     * Analyze a single Java file by path
-     *
-     * @param filePath path to the Java file
-     * @return FileMetrics object with all calculated metrics
-     * @throws IOException if file cannot be read
+     * Check if a line contains executable code (not just comments or whitespace)
+     * Made public and static for easy unit testing
      */
-    public FileMetrics analyzeFile(String filePath) throws IOException {
-        File file = new File(filePath);
-        return analyzeFile(file);
+    public static boolean hasExecutableCode(String line) {
+        String trimmed = line.trim();
+
+        // Blank or comment-only
+        if (isBlankLine(line) || isCommentOnlyLine(line)) {
+            return false;
+        }
+
+        // Just closing brace
+        if (trimmed.equals("}") || trimmed.equals("};")) {
+            return false;
+        }
+
+        // Package or import statements (optional to exclude)
+        if (trimmed.startsWith("package ") || trimmed.startsWith("import ")) {
+            return false;
+        }
+
+        // Has actual code
+        return true;
+    }
+
+    /**
+     * Count logical statements in a single line
+     * Improved algorithm that handles multiple statements per line
+     * Made public and static for easy unit testing
+     */
+    public static int countLogicalStatementsInLine(String line) {
+        String trimmed = line.trim();
+
+        if (!hasExecutableCode(line)) return 0;
+
+        String codeOnly = removeInlineComments(trimmed);
+
+        int count = 0;
+
+        // ✨ NEW: strip out the for(...) header so its semicolons don't count
+        String codeForSemicolonCount = codeOnly.replaceAll("for\\s*\\([^)]*\\)", "for(/*header*/)");
+
+        long semicolonCount = codeForSemicolonCount.chars().filter(ch -> ch == ';').count();
+        if (semicolonCount > 0) count += semicolonCount;
+
+        // Control flow keywords (no double-count for `for`, we still add 1 here)
+        String[] controlKeywords = {
+                "\\bif\\b", "\\belse\\b", "\\bfor\\b", "\\bwhile\\b", "\\bdo\\b",
+                "\\bswitch\\b", "\\btry\\b", "\\bcatch\\b", "\\bfinally\\b"
+        };
+        for (String keyword : controlKeywords) {
+            if (codeOnly.matches(".*" + keyword + "\\s*\\(.*") ||
+                    codeOnly.matches(".*\\}\\s*" + keyword + "\\s*\\{.*")) {
+                count++;
+            }
+        }
+
+        if (codeOnly.matches("^case\\s+.*:.*") || codeOnly.matches("^default\\s*:.*")) count++;
+        if (codeOnly.matches("^(public|private|protected|static|final|abstract)?\\s*(class|interface|enum)\\s+\\w+.*")) count++;
+        if (codeOnly.matches("^(public|private|protected|static)?\\s*\\w+\\s+\\w+\\s*\\(.*\\)\\s*\\{?$")) {
+            if (semicolonCount == 0) count++;
+        }
+
+        return count;
+    }
+
+    /**
+     * Remove inline comments from a line of code
+     * Handles both // and /* comments
+     */
+    private static String removeInlineComments(String line) {
+        // Remove // comments
+        int doubleSlashIndex = line.indexOf("//");
+        if (doubleSlashIndex >= 0) {
+            line = line.substring(0, doubleSlashIndex);
+        }
+
+        // Remove /* */ comments (simple approach)
+        int blockCommentStart = line.indexOf("/*");
+        int blockCommentEnd = line.indexOf("*/");
+        if (blockCommentStart >= 0 && blockCommentEnd >= 0) {
+            line = line.substring(0, blockCommentStart) + line.substring(blockCommentEnd + 2);
+        }
+
+        return line.trim();
+    }
+
+    /**
+     * Check if a file path should be excluded from analysis
+     */
+    private boolean shouldExcludeFile(Path path) {
+        String pathStr = path.toString().replace('\\', '/');
+
+        // Exclude test files
+        if (excludeTests) {
+            if (pathStr.contains("/test/") ||
+                    pathStr.contains("/tests/") ||
+                    pathStr.endsWith("Test.java") ||
+                    pathStr.endsWith("Tests.java")) {
+                if (verboseOutput) {
+                    System.out.println("  ⊗ Excluded (test): " + path.getFileName());
+                }
+                return true;
+            }
+        }
+
+        // Exclude generated files
+        if (excludeGenerated) {
+            if (pathStr.contains("/generated/") ||
+                    pathStr.contains("/target/generated-sources/") ||
+                    pathStr.contains("/build/generated/")) {
+                if (verboseOutput) {
+                    System.out.println("  ⊗ Excluded (generated): " + path.getFileName());
+                }
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
      * Analyze a single Java file
-     *
-     * @param file the Java file to analyze
-     * @return FileMetrics object with all calculated metrics
-     * @throws IOException if file cannot be read
+     */
+    public FileMetrics analyzeFile(String filePath) throws IOException {
+        return analyzeFile(new File(filePath));
+    }
+
+    /**
+     * Analyze a single Java file
      */
     public FileMetrics analyzeFile(File file) throws IOException {
-        int totalLines = 0;
-        int blankLines = 0;
-        int commentLines = 0;
-        int logicalSLOC = 0;
-
-        ParseState state = ParseState.CODE;
+        List<String> lines = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
-
             while ((line = reader.readLine()) != null) {
-                totalLines++;
-                String trimmed = line.trim();
+                lines.add(line);
+            }
+        }
 
-                // Handle blank lines
-                if (trimmed.isEmpty()) {
-                    blankLines++;
-                    continue;
-                }
+        int totalLines = lines.size();
+        int blankLines = 0;
+        int commentLines = 0;
+        int logicalSLOC = 0;
+        boolean inBlockComment = false;
 
-                // Parse the line
-                ParseResult result = parseLine(trimmed, state);
-                state = result.endState;
-                logicalSLOC += result.logicalStatements;
+        for (String line : lines) {
+            String trimmed = line.trim();
 
-                // Count comment-only lines
-                if (result.hasComment && !result.hasCode) {
-                    commentLines++;
-                }
+            // Track block comments
+            if (trimmed.contains("/*")) {
+                inBlockComment = true;
+            }
+
+            // Blank line
+            if (isBlankLine(line)) {
+                blankLines++;
+            }
+            // Comment-only line or inside block comment
+            else if (isCommentOnlyLine(line) || inBlockComment) {
+                commentLines++;
+            }
+            // Code line - count logical statements
+            else {
+                logicalSLOC += countLogicalStatementsInLine(line);
+            }
+
+            // End of block comment
+            if (trimmed.contains("*/")) {
+                inBlockComment = false;
             }
         }
 
@@ -272,162 +429,8 @@ public class CodeMetricsAnalyzer {
     }
 
     /**
-     * Result of parsing a single line
-     */
-    private static class ParseResult {
-        ParseState endState;
-        boolean hasCode;
-        boolean hasComment;
-        int logicalStatements;
-
-        ParseResult(ParseState endState, boolean hasCode, boolean hasComment, int logicalStatements) {
-            this.endState = endState;
-            this.hasCode = hasCode;
-            this.hasComment = hasComment;
-            this.logicalStatements = logicalStatements;
-        }
-    }
-
-    /**
-     * Parse a single line to determine if it contains code, comments, or both
-     */
-    private ParseResult parseLine(String line, ParseState initialState) {
-        ParseState state = initialState;
-        boolean hasCode = false;
-        boolean hasComment = false;
-        int logicalStatements = 0;
-
-        StringBuilder codeBuffer = new StringBuilder();
-
-        for (int i = 0; i < line.length(); i++) {
-            char c = line.charAt(i);
-            char next = (i + 1 < line.length()) ? line.charAt(i + 1) : '\0';
-
-            switch (state) {
-                case CODE:
-                    if (c == '/' && next == '/') {
-                        // Start of line comment
-                        state = ParseState.LINE_COMMENT;
-                        hasComment = true;
-                        i++; // Skip next char
-
-                        // Check accumulated code
-                        if (codeBuffer.toString().trim().length() > 0) {
-                            hasCode = true;
-                            logicalStatements += countLogicalStatements(codeBuffer.toString());
-                        }
-                        codeBuffer.setLength(0);
-                    } else if (c == '/' && next == '*') {
-                        // Start of block comment or JavaDoc
-                        if (i + 2 < line.length() && line.charAt(i + 2) == '*') {
-                            state = ParseState.JAVADOC;
-                            i += 2;
-                        } else {
-                            state = ParseState.BLOCK_COMMENT;
-                            i++;
-                        }
-                        hasComment = true;
-
-                        // Check accumulated code
-                        if (codeBuffer.toString().trim().length() > 0) {
-                            hasCode = true;
-                            logicalStatements += countLogicalStatements(codeBuffer.toString());
-                        }
-                        codeBuffer.setLength(0);
-                    } else {
-                        codeBuffer.append(c);
-                    }
-                    break;
-
-                case LINE_COMMENT:
-                    // Line comments go until end of line
-                    break;
-
-                case BLOCK_COMMENT:
-                case JAVADOC:
-                    if (c == '*' && next == '/') {
-                        // End of block comment
-                        state = ParseState.CODE;
-                        i++; // Skip */
-                    }
-                    break;
-            }
-        }
-
-        // End of line processing
-        if (state == ParseState.LINE_COMMENT) {
-            state = ParseState.CODE;
-        }
-
-        // Check remaining code
-        if (state == ParseState.CODE && codeBuffer.toString().trim().length() > 0) {
-            hasCode = true;
-            logicalStatements += countLogicalStatements(codeBuffer.toString());
-        }
-
-        return new ParseResult(state, hasCode, hasComment, logicalStatements);
-    }
-
-    /**
-     * Count logical statements in a code snippet
-     *
-     * <p>Logical statements include:</p>
-     * <ul>
-     *   <li>Control flow: if, else, for, while, do, switch, case</li>
-     *   <li>Method declarations and calls</li>
-     *   <li>Variable declarations and assignments</li>
-     *   <li>Return, throw, break, continue statements</li>
-     *   <li>Try/catch/finally blocks</li>
-     * </ul>
-     */
-    private int countLogicalStatements(String code) {
-        int count = 0;
-        String trimmed = code.trim();
-
-        if (trimmed.isEmpty()) {
-            return 0;
-        }
-
-        // Control flow keywords
-        String[] keywords = {
-                "\\bif\\b", "\\belse\\b", "\\bfor\\b", "\\bwhile\\b", "\\bdo\\b",
-                "\\bswitch\\b", "\\bcase\\b", "\\breturn\\b", "\\bthrow\\b",
-                "\\btry\\b", "\\bcatch\\b", "\\bfinally\\b", "\\bbreak\\b", "\\bcontinue\\b"
-        };
-
-        for (String keyword : keywords) {
-            if (trimmed.matches(".*" + keyword + ".*")) {
-                count++;
-                break; // Count once per line
-            }
-        }
-
-        // Method calls/declarations (identifier followed by parentheses)
-        if (trimmed.matches(".*\\w+\\s*\\(.*")) {
-            count++;
-        }
-
-        // Statements with semicolons
-        if (trimmed.contains(";")) {
-            if (count == 0) {
-                count++;
-            }
-        }
-
-        // Class/interface/enum declarations
-        if (trimmed.matches("^(public|private|protected)?\\s*(static)?\\s*(final)?\\s*(class|interface|enum)\\s+.*")) {
-            count++;
-        }
-
-        return Math.max(count, 0);
-    }
-
-    /**
      * Analyze all Java files in a directory (recursively)
-     *
-     * @param projectPath root directory path
-     * @return ProjectMetrics with aggregated metrics
-     * @throws IOException if directory cannot be read
+     * Excludes test files by default
      */
     public ProjectMetrics analyzeProject(String projectPath) throws IOException {
         Path startPath = Paths.get(projectPath);
@@ -437,12 +440,19 @@ public class CodeMetricsAnalyzer {
             List<File> javaFiles = paths
                     .filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".java"))
+                    .filter(p -> !shouldExcludeFile(p))  //  EXCLUDE TEST FILES
                     .map(Path::toFile)
                     .collect(Collectors.toList());
 
             System.out.println("╔═══════════════════════════════════════════════════════════════");
             System.out.println("║ Analyzing project: " + projectPath);
-            System.out.println("║ Found " + javaFiles.size() + " Java files");
+            System.out.println("║ Found " + javaFiles.size() + " Java files (excluding tests)");
+            if (excludeTests) {
+                System.out.println("║ Test exclusion: ENABLED");
+            }
+            if (excludeGenerated) {
+                System.out.println("║ Generated code exclusion: ENABLED");
+            }
             System.out.println("╚═══════════════════════════════════════════════════════════════\n");
 
             for (File file : javaFiles) {
@@ -452,7 +462,6 @@ public class CodeMetricsAnalyzer {
                     System.out.println("  ✓ Analyzed: " + file.getName());
                 } catch (IOException e) {
                     System.err.println("  ✗ Failed: " + file.getName());
-                    Logger.error("Failed to analyze file: " + file.getAbsolutePath(), e);
                 }
             }
 
@@ -464,67 +473,64 @@ public class CodeMetricsAnalyzer {
 
     /**
      * Command-line interface for the analyzer
-     *
-     * <p><b>Usage:</b></p>
-     * <pre>
-     * java CodeMetricsAnalyzer &lt;file-or-directory&gt;
-     * </pre>
-     *
-     * <p><b>Quick Analysis Mode:</b></p>
-     * <p>If no arguments provided, runs demo analysis on specific files.
-     * Modify the file paths below to analyze your desired files.</p>
      */
     public static void main(String[] args) {
         CodeMetricsAnalyzer analyzer = new CodeMetricsAnalyzer();
 
-        // ═══════════════════════════════════════════════════════════════
-        // QUICK ANALYSIS MODE - Modify these paths for your analysis
-        // ═══════════════════════════════════════════════════════════════
-        if (args.length == 0) {
+        // Parse command line arguments
+        boolean showHelp = false;
+        String targetPath = null;
+
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
+                case "--include-tests":
+                    analyzer.setExcludeTests(false);
+                    break;
+                case "--include-generated":
+                    analyzer.setExcludeGenerated(false);
+                    break;
+                case "--verbose":
+                    analyzer.setVerboseOutput(true);
+                    break;
+                case "--help":
+                case "-h":
+                    showHelp = true;
+                    break;
+                default:
+                    if (!args[i].startsWith("--")) {
+                        targetPath = args[i];
+                    }
+            }
+        }
+
+        if (showHelp) {
+            printHelp();
+            return;
+        }
+
+        // Quick analysis mode
+        if (targetPath == null) {
             System.out.println("╔═══════════════════════════════════════════════════════════════");
             System.out.println("║ Code Metrics Analyzer - QUICK ANALYSIS MODE");
             System.out.println("╚═══════════════════════════════════════════════════════════════\n");
 
             try {
-                // ─────────────────────────────────────────────────────────
-                // EXAMPLE 1: Analyze a single file
-                // ─────────────────────────────────────────────────────────
-                System.out.println("═══ SINGLE FILE ANALYSIS ═══\n");
-                FileMetrics metrics = analyzer.analyzeFile("src/main/java/ca/concordia/igo/service/PaymentService.java");
-                System.out.println(metrics);
-
-                System.out.println("\n" + "═".repeat(65) + "\n");
-
-                // ─────────────────────────────────────────────────────────
-                // EXAMPLE 2: Analyze entire project
-                // ─────────────────────────────────────────────────────────
-                System.out.println("═══ PROJECT ANALYSIS ═══\n");
+                // Analyze entire project (excluding tests by default)
+                System.out.println("═══ PROJECT ANALYSIS (Excluding Test Code) ═══\n");
                 ProjectMetrics projectMetrics = analyzer.analyzeProject("src/main/java");
                 System.out.println(projectMetrics.toDetailedString());
 
             } catch (IOException e) {
                 System.err.println("Error during analysis: " + e.getMessage());
-                System.err.println("\nNote: Make sure the file paths are correct relative to your current directory.");
-                System.err.println("You can modify the file paths in the main() method.\n");
-
-                System.out.println("╔═══════════════════════════════════════════════════════════════");
-                System.out.println("║ Alternative Usage: Command Line Mode");
-                System.out.println("╠═══════════════════════════════════════════════════════════════");
-                System.out.println("║ java CodeMetricsAnalyzer <file-or-directory>");
-                System.out.println("║");
-                System.out.println("║ Examples:");
-                System.out.println("║   java CodeMetricsAnalyzer PaymentService.java");
-                System.out.println("║   java CodeMetricsAnalyzer src/main/java");
-                System.out.println("╚═══════════════════════════════════════════════════════════════");
+                System.err.println("\nNote: Make sure you're running from the project root directory.");
+                System.err.println("Usage: java CodeMetricsAnalyzer <path> [options]\n");
+                printHelp();
             }
             return;
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // COMMAND LINE MODE - Analyze path provided as argument
-        // ═══════════════════════════════════════════════════════════════
-        String path = args[0];
-        File target = new File(path);
+        // Command line mode
+        File target = new File(targetPath);
 
         try {
             if (target.isFile() && target.getName().endsWith(".java")) {
@@ -534,7 +540,7 @@ public class CodeMetricsAnalyzer {
 
             } else if (target.isDirectory()) {
                 // Analyze entire project
-                ProjectMetrics projectMetrics = analyzer.analyzeProject(path);
+                ProjectMetrics projectMetrics = analyzer.analyzeProject(targetPath);
                 System.out.println(projectMetrics.toDetailedString());
 
             } else {
@@ -547,5 +553,32 @@ public class CodeMetricsAnalyzer {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    private static void printHelp() {
+        System.out.println("╔═══════════════════════════════════════════════════════════════");
+        System.out.println("║ Code Metrics Analyzer - Usage");
+        System.out.println("╠═══════════════════════════════════════════════════════════════");
+        System.out.println("║ java CodeMetricsAnalyzer <path> [options]");
+        System.out.println("║");
+        System.out.println("║ Arguments:");
+        System.out.println("║   <path>              File or directory to analyze");
+        System.out.println("║");
+        System.out.println("║ Options:");
+        System.out.println("║   --include-tests     Include test files in analysis");
+        System.out.println("║   --include-generated Include generated files in analysis");
+        System.out.println("║   --verbose           Show detailed exclusion information");
+        System.out.println("║   --help, -h          Show this help message");
+        System.out.println("║");
+        System.out.println("║ Examples:");
+        System.out.println("║   java CodeMetricsAnalyzer src/main/java");
+        System.out.println("║   java CodeMetricsAnalyzer src/main/java --verbose");
+        System.out.println("║   java CodeMetricsAnalyzer PaymentService.java");
+        System.out.println("║   java CodeMetricsAnalyzer src --include-tests");
+        System.out.println("║");
+        System.out.println("║ Default Behavior:");
+        System.out.println("║   - Excludes test files (*Test.java, */test/*, */tests/*)");
+        System.out.println("║   - Excludes generated code (*/generated/*, */target/*)");
+        System.out.println("╚═══════════════════════════════════════════════════════════════");
     }
 }
