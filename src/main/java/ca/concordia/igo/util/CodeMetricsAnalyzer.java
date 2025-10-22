@@ -518,6 +518,7 @@ public class CodeMetricsAnalyzer {
                 // Analyze entire project (excluding tests by default)
                 System.out.println("═══ PROJECT ANALYSIS (Excluding Test Code) ═══\n");
                 ProjectMetrics projectMetrics = analyzer.analyzeProject("src/main/java");
+//                ProjectMetrics projectMetrics = analyzer.analyzeProject("src/main/java/ca/concordia/igo/service/PaymentService.java");
                 System.out.println(projectMetrics.toDetailedString());
 
             } catch (IOException e) {
