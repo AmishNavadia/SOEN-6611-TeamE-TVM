@@ -17,14 +17,23 @@ import javafx.util.Duration;
  * Usage pattern:
  * 1. Call startSession() when user begins interaction
  * 2. Call resetTimer() on any user input to extend session
- * 3. The Session automatically ends after 60 seconds of inactivity
+ * 3. The Session automatically ends after the configured period of inactivity
  * 4. Call endSession() to manually end the session early
  * The caller provides the timeout action (e.g., return to home screen) * as a Runnable.
  */
 public class SessionManager {
-    private static final int TIMEOUT_SECONDS = 300; // Inactivity timeout
+    private static final int DEFAULT_TIMEOUT_SECONDS = 20; // Inactivity timeout
+    private final int timeoutSeconds;
     private Timeline timeoutTimer;
     private Runnable onTimeout;
+
+    public SessionManager() {
+        this(DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    SessionManager(int timeoutSeconds) {
+        this.timeoutSeconds = timeoutSeconds;
+    }
 
     /**
      * Start a new user session with a timeout handler.
@@ -39,7 +48,7 @@ public class SessionManager {
      */
     public void startSession(Runnable timeoutAction) {
         // LOG 9: Session lifecycle
-        Logger.info("User session started - Timeout: " + TIMEOUT_SECONDS + " seconds");
+        Logger.info("User session started - Timeout: " + timeoutSeconds + " seconds");
         this.onTimeout = timeoutAction;
         resetTimer();
     }
@@ -57,7 +66,7 @@ public class SessionManager {
         Logger.debug("Session timer reset - extending session");
         if (timeoutTimer != null) timeoutTimer.stop();
         timeoutTimer = new Timeline(new KeyFrame(
-                Duration.seconds(TIMEOUT_SECONDS),
+                Duration.seconds(timeoutSeconds),
                 e -> {
                     Logger.warn("Session timeout occurred - returning to main menu");
                     onTimeout.run();
